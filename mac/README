@@ -1,0 +1,7 @@
+In order to use this Cocoa bridge to control Skype you must perform the following steps:
+
+1) Create a symbolic link to the Skype framework under /System/Library/Frameworks
+
+	ln -s /Applications/Skype.app/Contents/Frameworks/Skype.framework /System/Library/Frameworks/Skype.framework
+	
+2) Specify -Djna.library.path=native as a JVM argument
