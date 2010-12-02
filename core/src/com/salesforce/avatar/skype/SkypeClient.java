@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.salesforce.avatar.Command;
 
+@SuppressWarnings("unused")
 public abstract class SkypeClient {
 	
 	private static final String CONFIG_SKYPE_PREFIX = "skype.";
