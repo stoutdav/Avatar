@@ -15,15 +15,15 @@ public class Avatar {
 
     private AvatarSerialInterface serialInterface;
     private XMPPConnection gTalkConnection;
-    private static final String AVATAR_JUID = "force.avatar@gmail.com";
-    private static final String AVATAR_PASSWORD = "pxJUOuk8wGFa4ty2dpV0";
+    private static final String AVATAR_JUID = ""; // TODO: Allow configuration of JUID/Password
+    private static final String AVATAR_PASSWORD = "";
 
     public static void main(String args[]) {
         final Avatar avatar = new Avatar();
         avatar.connect();
         while (avatar.isConnected()) {
         }
-        // TODO(pantaki): Disconnect?
+        // TODO: Disconnect?
     }
 
     private void connect() {
