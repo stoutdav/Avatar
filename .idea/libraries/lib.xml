@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="lib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/mac/lib/rococoa-core-0.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/mac/lib/cglib-2.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/mac/lib/rococoa-core-0.5-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/mac/lib/slf4j-api-1.5.8.jar!/" />
+      <root url="jar://$PROJECT_DIR$/mac/lib/asm-3.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/mac/lib/jna-src.zip!/" />
+      <root url="jar://$PROJECT_DIR$/mac/lib/slf4j-jdk14-1.5.8.jar!/" />
+      <root url="jar://$PROJECT_DIR$/mac/lib/jna.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
