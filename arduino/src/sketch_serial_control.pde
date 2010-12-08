@@ -16,7 +16,6 @@ void setup() {
 
 void loop() {
   processSerial();
-  processButton();
 }
 
 void processSerial() {
@@ -32,21 +31,6 @@ void processSerial() {
       down();
     };
 
-  }
-}
-
-
-void processButton() {
-
-  boolean upButtonState = digitalRead(2);
-  boolean downButtonState = digitalRead(5);
-
-  if (upButtonState == LOW) {
-    up();
-  }
-
-  if (downButtonState == LOW) {
-    down();
   }
 }
 
