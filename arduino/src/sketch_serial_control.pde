@@ -24,7 +24,6 @@ void processSerial() {
     if('d' == command) {
       down();
     };
-
   }
 }
 
