@@ -5,11 +5,6 @@
 
 void setup() {
   Serial.begin(9600);
-  pinMode(UP_PIN, INPUT);
-  digitalWrite(UP_PIN, HIGH);
-
-  pinMode(DOWN_PIN, INPUT);
-  digitalWrite(DOWN_PIN, HIGH);
 
   pinMode(LED_PIN, OUTPUT);
 }
