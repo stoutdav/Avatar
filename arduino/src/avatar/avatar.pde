@@ -8,152 +8,261 @@
 // 11 - PS2 Controller Data
 
 #include <PS2X_lib.h>
+#include <NewSoftSerial.h>   
 
-const int RIGHT_CONTROLLER_PIN = 0;
-const int LEFT_CONTROLLER_PIN = 1;
+// Pin definitions for motors
+#define RIGHT_MOTOR_TX_PIN 0
+#define LEFT_MOTOR_TX_PIN 1
+#define NULL_RX_PIN 12 //Will this work? Does it need to be 1? this is for motor rx
 
-const int FRONT_PING_SENSOR_PIN = 4;
+// Pin definitions for sensors
+#define FRONT_PING_SENSOR_PIN 4
 
-const int PS2_CLOCK_PIN = 8;
-const int PS2_COMMAND_PIN = 9;
-const int PS2_ATTENTION_PIN = 10;
-const int PS2_DATA_PIN = 11;
+// Pin definitions for PS2 controller
+#define PS2_CLOCK_PIN  8
+#define PS2_COMMAND_PIN 9
+#define PS2_ATTENTION_PIN 10
+#define PS2_DATA_PIN 11
 
+// Character constants for directional commands
 const char FORWARD = 'f';
 const char BACKWARD = 'b';
 const char LEFT = 'l';
 const char RIGHT = 'r';
 
-// For PS2 Controller
+// Constant definitions for Motor/Position Controllers:
+//http://www.parallax.com/Portals/0/Downloads/docs/prod/motors/27906-PositionClrKit-v1.1.pdf
+// See: http://www.ieee.org/netstorage/spectrum/articles/oct10/DaveBot_Arduino_Sketch.txt for much of the inspiration
+const byte CLEAR_POSITION = 0x28;
+const byte SET_ORIENTATION_AS_REVERSED = 0x31; //0x30 + 1 for device ID. We have 1 device per bus.
+const byte TRAVEL_NUMBER_OF_POSITIONS = 0x21; //0x20 + 1 for device ID. We have 1 device per bus.
+const byte SET_SPEED_RAMP_RATE = 0x48;
+const byte rampSpeed = 5; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
+
+// Constant definitions for front sonar sensor
+const long minDistanceFromObject = 5; // in centimeters
+
+// Variables used for PS2 Controller
+PS2X ps2x;
 int error = 0; 
 byte type = 0;
 byte vibrate = 0;
 
-PS2X ps2x;
+// Variables used for motor control
+NewSoftSerial rightMotorUart(NULL_RX_PIN, RIGHT_MOTOR_TX_PIN); 
+NewSoftSerial leftMotorUart(NULL_RX_PIN, LEFT_MOTOR_TX_PIN); 
 
 void setup() {
-	Serial.begin(57600); // Serial from PC was tested with 9600. Will this still work
-	
-	// PS2 Controller Setup GamePad(clock, command, attention, data, Pressures?, Rumble?) 
-	error = ps2x.config_gamepad(PS2_CLOCK_PIN, PS2_COMMAND_PIN, PS2_ATTENTION_PIN, PS2_DATA_PIN, false, false);
-	if(error == 0){
-		Serial.println("Found Controller, configured successful");
-		Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
-		Serial.println("holding L1 or R1 will print out the analog stick values.");
-		Serial.println("Go to www.billporter.info for updates and to report bugs.");
-	}
-   
-	else if(error == 1)
-		Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
-   
-	else if(error == 2)
-		Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
-   
-	else if(error == 3)
-		Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
-   
-	// What does this do?
-	// Serial.print(ps2x.Analog(1), HEX);
-   
-	type = ps2x.readType();
-	switch(type) {
-		case 0:
-			Serial.println("Unknown Controller type");
-		break;
-		case 1:
-			Serial.println("DualShock Controller Found");
-		break;
-		case 2:
-			// Guitar Hero Controller not supported. TODO(paul): error?
-			Serial.println("GuitarHero Controller Found");
-		break;
-	}
+  setupPcInterface();
+  setupPS2Controller();
+  setupMotorControl();
+}
+
+void setupPcInterface() {
+  Serial.begin(9600); 
+}
+
+void setupPS2Controller() {
+  // PS2 Controller Setup GamePad(clock, command, attention, data, Pressures?, Rumble?) 
+  error = ps2x.config_gamepad(PS2_CLOCK_PIN, PS2_COMMAND_PIN, PS2_ATTENTION_PIN, PS2_DATA_PIN, false, false);
+  if(error == 0){
+    Serial.println("Found Controller, configured successful");
+    Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
+    Serial.println("holding L1 or R1 will print out the analog stick values.");
+    Serial.println("Go to www.billporter.info for updates and to report bugs.");
+  }
+
+  else if(error == 1)
+    Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
+
+  else if(error == 2)
+    Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
+
+  else if(error == 3)
+    Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
+
+  // What does this do?
+  // Serial.print(ps2x.Analog(1), HEX);
+
+  type = ps2x.readType();
+  switch(type) {
+  case 0:
+    Serial.println("Unknown Controller type");
+    break;
+  case 1:
+    Serial.println("DualShock Controller Found");
+    break;
+  case 2:
+    // Guitar Hero Controller not supported. TODO(paul): error?
+    Serial.println("GuitarHero Controller Found");
+    break;
+  }
+}
+
+void setupMotorControl() {
+  // Init soft UART. Controller boards operate at 19.2kbits/sec
+  rightMotorUart.begin(19200);
+  leftMotorUart.begin(19200);
+
+  // Clear Positions
+  rightMotorUart.print(CLEAR_POSITION);
+  leftMotorUart.print(CLEAR_POSITION);
+
+  // Reverse the left motor. Depends on how it's been wired
+  leftMotorUart.print(SET_ORIENTATION_AS_REVERSED);
+
+  // Set speed ramp rate (acceleration/deceleration)
+  rightMotorUart.print(SET_SPEED_RAMP_RATE);
+  rightMotorUart.print(rampSpeed);
+  leftMotorUart.print(SET_SPEED_RAMP_RATE);
+  leftMotorUart.print(rampSpeed);	
+
+
 }
 
 void loop() {
-	// char command = getSerialInput(); TODO(paul): Handle both serial and ps2 at the same time
-	char command = getPS2ControllerInput();
-	switch (command) {
-		case FORWARD:
-			forward();
-		break;
-		case BACKWARD:
-			back();
-		break;
-		case LEFT:
-			left();
-		break;
-		case RIGHT:
-			right();
-		break;
-        }
+
+  // If bot is about to run into something immediately stop it
+  // TODO(paul): Do this more elegantly by decelerating
+  long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
+  if (distanceFromObject < minDistanceFromObject) {
+    emergencyStop();
+  }
+
+  // char command = getSerialInput(); TODO(paul): Handle both serial and ps2 at the same time
+  char command = getPS2ControllerInput();
+  switch (command) {
+  case FORWARD:
+    travel(-1);
+    break;
+  case BACKWARD:
+    travel(1);
+    break;
+  case LEFT:
+    rotate(1);
+    break;
+  case RIGHT:
+    rotate(-1);
+    break;
+  }
 }
 
 char getSerialInput() {
-	if (Serial.available() > 0) {
-		return Serial.read();
-	}
-	return 0;
+  if (Serial.available() > 0) {
+    return Serial.read();
+  }
+  return 0;
 }
 
 char getPS2ControllerInput() {
-	if(error == 1)
-		//skip if no controller found
-	return 0;
-	
-	ps2x.read_gamepad(); //read controller. no params used because rumble not enabled. Should be called at least once per second
-    
-	// If the right analog stick has not been pressed then do nothing.
-    if (!ps2x.Button(PSB_R1)) {
-		return 0;
-	}
-		
-	// TODO(paul): handle more than one axis at a time
+  if(error == 1)
+    //skip if no controller found
+    return 0;
 
-	
-	int yAxis = map(ps2x.Analog(PSS_RY),  0, 255, -1, 1);
-	int xAxis = map(ps2x.Analog(PSS_RX),  0, 255, -1, 1);
-	
-	if (yAxis != 0) {
-		if (yAxis == 1) {
-			return FORWARD;
-		}
-		if (yAxis == -1) {
-			return BACKWARD;
-		}
-	
-	}
-	
-	if (xAxis != 0) {
-		if (xAxis == 1) {
-			return RIGHT;
-		}
-		if (xAxis == -1) {
-			return LEFT;
-		}
-	}	
-	return 0;
-	
+  ps2x.read_gamepad(); //read controller. no params used because rumble not enabled. Should be called at least once per second
+
+    // If the right analog stick has not been pressed then do nothing.
+  if (!ps2x.Button(PSB_R1)) {
+    return 0;
+  }
+
+  // TODO(paul): handle more than one axis at a time
+  int yAxis = map(ps2x.Analog(PSS_RY),  0, 255, -1, 1);
+  int xAxis = map(ps2x.Analog(PSS_RX),  0, 255, -1, 1);
+
+  if (yAxis != 0) {
+    if (yAxis == 1) {
+      return FORWARD;
+    }
+    if (yAxis == -1) {
+      return BACKWARD;
+    }
+  }
+
+  if (xAxis != 0) {
+    if (xAxis == 1) {
+      return RIGHT;
+    }
+    if (xAxis == -1) {
+      return LEFT;
+    }
+  }	
+  return 0;	
 }
 
+// Move forward or backward by the number of encoder positions specified. Commands are cumulative.
+// Forward if position < 0
+// Backward if position > 0
+// Approx 1.33 cm per position
+void travel(int positions) {
+  byte highByte = highByte(positions);
+  byte lowByte = lowByte(positions);
 
-void forward() {
-	
- 
+  rightMotorUart.print(TRAVEL_NUMBER_OF_POSITIONS);
+  rightMotorUart.print(highByte);
+  rightMotorUart.print(lowByte);
+
+  leftMotorUart.print(TRAVEL_NUMBER_OF_POSITIONS);
+  leftMotorUart.print(highByte);
+  leftMotorUart.print(lowByte);
 }
 
-void back() {
+// Rotate right or left by the number of encoder positions specified. Commands are cumulative.
+// Right if position < 0
+// Left if position > 0
+// approx 4.5 degrees per position
+void rotate(int positions) {
+  leftMotorUart.print(TRAVEL_NUMBER_OF_POSITIONS);
+  leftMotorUart.print(highByte(positions));
+  leftMotorUart.print(lowByte(positions));
 
+  rightMotorUart.print(TRAVEL_NUMBER_OF_POSITIONS);
+  rightMotorUart.print(highByte(-1 * positions));
+  rightMotorUart.print(lowByte(-1 * positions));
 }
 
-void left() {
-
+// Immediate stop without deceleration
+void emergencyStop() {
+  rightMotorUart.print(CLEAR_POSITION);
+  leftMotorUart.print(CLEAR_POSITION);
 }
 
-void right() {
-
+// Smooth stop with deceleration. Not cumulative.
+void smoothStop() {
+  rightMotorUart.print(0);
+  leftMotorUart.print(0);
 }
 
+// From: http://www.arduino.cc/en/Tutorial/Ping. See for using inches instead of cm.
+long ping(int pingPin) {
+  long pingDuration; // microseconds
+  long distance; // centimeters
+
+  // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  pinMode(pingPin, OUTPUT);
+  digitalWrite(pingPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(pingPin, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(pingPin, LOW);
+
+  // The same pin is used to read the signal from the PING))): a HIGH
+  // pulse whose duration is the time (in microseconds) from the sending
+  // of the ping to the reception of its echo off of an object.
+  pinMode(pingPin, INPUT);
+  pingDuration = pulseIn(pingPin, HIGH);
+
+  // convert the time into a distance
+  distance = microsecondsToCentimeters(pingDuration);
+}
+
+long microsecondsToCentimeters(long microseconds) {
+  // The speed of sound is 340 m/s or 29 microseconds per centimeter.
+  // The ping travels out and back, so to find the distance of the
+  // object we take half of the distance travelled.
+  return microseconds / 29 / 2;
+}
 
 
 
