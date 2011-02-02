@@ -10,6 +10,9 @@
 #include <PS2X_lib.h>
 #include <NewSoftSerial.h>   
 
+// Uncomment this for debugging output
+#define AVATAR_DEBUG
+
 // Pin definitions for motors
 #define RIGHT_MOTOR_TX_PIN 0
 #define LEFT_MOTOR_TX_PIN 1
@@ -31,13 +34,15 @@ const char LEFT = 'l';
 const char RIGHT = 'r';
 
 // Constant definitions for Motor/Position Controllers:
-//http://www.parallax.com/Portals/0/Downloads/docs/prod/motors/27906-PositionClrKit-v1.1.pdf
+// http://www.parallax.com/Portals/0/Downloads/docs/prod/motors/27906-PositionClrKit-v1.1.pdf
 // See: http://www.ieee.org/netstorage/spectrum/articles/oct10/DaveBot_Arduino_Sketch.txt for much of the inspiration
-const byte CLEAR_POSITION = 0x28;
+const byte CLEAR_POSITION = 0x29; //0x28 + 1 for device ID. We have 1 device per bus.
 const byte SET_ORIENTATION_AS_REVERSED = 0x31; //0x30 + 1 for device ID. We have 1 device per bus.
 const byte TRAVEL_NUMBER_OF_POSITIONS = 0x21; //0x20 + 1 for device ID. We have 1 device per bus.
-const byte SET_SPEED_RAMP_RATE = 0x48;
+const byte SET_SPEED_RAMP_RATE = 0x49; //0x48 + 1 for device ID. We have 1 device per bus.
 const byte rampSpeed = 5; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
+const byte SET_SPEED_MAXIMUM = 0x41; //0x40 + 1 for device ID. We have 1 device per bus.
+const int maximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
 
 // Constant definitions for front sonar sensor
 const long minDistanceFromObject = 5; // in centimeters
@@ -117,20 +122,38 @@ void setupMotorControl() {
   leftMotorUart.print(SET_SPEED_RAMP_RATE);
   leftMotorUart.print(rampSpeed);	
 
-
+  // Set maximum speed
+  rightMotorUart.print(SET_SPEED_MAXIMUM);
+  rightMotorUart.print(highByte(maximumSpeed));
+  leftMotorUart.print(SET_SPEED_MAXIMUM);
+  leftMotorUart.print(lowByte(maximumSpeed));
 }
 
 void loop() {
+  checkForCollision();
+  char serialCommand = getSerialInput(); 
+  char ps2Command = getPS2ControllerInput();
+  if (serialCommand > 0) {
+    log("Serial command received: " + serialCommand);
+    performCommand(serialCommand);
+  }
+  if (ps2Command > 0) {
+    log("PS2 command received: " + ps2Command);
+    performCommand(ps2Command);
+  }
+}
 
+void checkForCollision() {
   // If bot is about to run into something immediately stop it
   // TODO(paul): Do this more elegantly by decelerating
   long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
   if (distanceFromObject < minDistanceFromObject) {
+    log("Collision imminent: " + String(distanceFromObject) + "cm from object");
     emergencyStop();
   }
+}
 
-  // char command = getSerialInput(); TODO(paul): Handle both serial and ps2 at the same time
-  char command = getPS2ControllerInput();
+void performCommand(char command) {
   switch (command) {
   case FORWARD:
     travel(-1);
@@ -195,6 +218,7 @@ char getPS2ControllerInput() {
 // Backward if position > 0
 // Approx 1.33 cm per position
 void travel(int positions) {
+  log("Travelling " + String(positions) + " positions");
   byte highByte = highByte(positions);
   byte lowByte = lowByte(positions);
 
@@ -212,6 +236,7 @@ void travel(int positions) {
 // Left if position > 0
 // approx 4.5 degrees per position
 void rotate(int positions) {
+  log("Rotating " + String(positions) + " positions");
   leftMotorUart.print(TRAVEL_NUMBER_OF_POSITIONS);
   leftMotorUart.print(highByte(positions));
   leftMotorUart.print(lowByte(positions));
@@ -223,12 +248,14 @@ void rotate(int positions) {
 
 // Immediate stop without deceleration
 void emergencyStop() {
+  log("Initating emergency stop");
   rightMotorUart.print(CLEAR_POSITION);
   leftMotorUart.print(CLEAR_POSITION);
 }
 
 // Smooth stop with deceleration. Not cumulative.
 void smoothStop() {
+  log("Initiating smooth stop");
   rightMotorUart.print(0);
   leftMotorUart.print(0);
 }
@@ -262,6 +289,12 @@ long microsecondsToCentimeters(long microseconds) {
   // The ping travels out and back, so to find the distance of the
   // object we take half of the distance travelled.
   return microseconds / 29 / 2;
+}
+
+void log(String message) {
+  #ifdef AVATAR_DEBUG
+    Serial.println(message);
+  #endif
 }
 
 
