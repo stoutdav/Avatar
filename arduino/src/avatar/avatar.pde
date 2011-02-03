@@ -1,11 +1,13 @@
 // Digital Pin usage for reference: (Directions from the the perspective of the bot)
-// 2 - Right Position Controller
-// 3 - Left Position Controller
+// 0 - Serial Rx to PC
+// 1 - Serial Tx to PC
+// 3 - Position Controllers (Left has ID=1 and right has ID=2)
 // 4 - Front Ping Sensor
 // 8 - PS2 Controller Clock
 // 9 - PS2 Controller Command
 // 10 - PS2 Controller Attention
 // 11 - PS2 Controller Data
+// 12 - Unused Pin for soft serial Rx
 
 #include <PS2X_lib.h>
 #include <NewSoftSerial.h>   
@@ -14,9 +16,8 @@
 #define AVATAR_DEBUG
 
 // Pin definitions for motors
-#define RIGHT_MOTOR_TX_PIN 2
-#define LEFT_MOTOR_TX_PIN 3
-#define NULL_RX_PIN 12
+#define MOTOR_TX_PIN 3
+#define NULL_RX_PIN 12 // UNUSED PIN
 
 // Pin definitions for sensors
 #define FRONT_PING_SENSOR_PIN 4
@@ -36,12 +37,21 @@ const char RIGHT = 'r';
 // Constant definitions for Motor/Position Controllers:
 // http://www.parallax.com/Portals/0/Downloads/docs/prod/motors/27906-PositionClrKit-v1.1.pdf
 // See: http://www.ieee.org/netstorage/spectrum/articles/oct10/DaveBot_Arduino_Sketch.txt for much of the inspiration
-const byte CLEAR_POSITION = 0x29; //0x28 + 1 for device ID. We have 1 device per bus.
-const byte SET_ORIENTATION_AS_REVERSED = 0x31; //0x30 + 1 for device ID. We have 1 device per bus.
-const byte TRAVEL_NUMBER_OF_POSITIONS = 0x21; //0x20 + 1 for device ID. We have 1 device per bus.
-const byte SET_SPEED_RAMP_RATE = 0x49; //0x48 + 1 for device ID. We have 1 device per bus.
+const byte QPOS = 0x08;           //Query Position
+const byte QSPD = 0x10;           //Query Speed
+const byte CHFA = 0x18;           //Check for Arrival
+const byte TRVL = 0x20;           //Travel Number of Positions
+const byte CLRP = 0x28;           //Clear Position
+const byte SREV = 0x30;           //Set Orientation as Reversed
+const byte STXD = 0x38;           //Set TX Delay
+const byte SMAX = 0x40;           //Set Speed Maximum
+const byte SSRR = 0x48;           //Set Speed Ramp Rate
+const byte LeftMotor  = 0x01;    //ID for left motor
+const byte RightMotor = 0x02;    //ID for right motor
+const byte BothMotors = 0x00;    //ID for both motrs
+
+// Configuration for motor controllers
 const byte rampSpeed = 5; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
-const byte SET_SPEED_MAXIMUM = 0x41; //0x40 + 1 for device ID. We have 1 device per bus.
 const int maximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
 
 // Constant definitions for front sonar sensor
@@ -54,8 +64,7 @@ byte type = 0;
 byte vibrate = 0;
 
 // Variables used for motor control
-NewSoftSerial rightMotorUart(NULL_RX_PIN, RIGHT_MOTOR_TX_PIN); 
-NewSoftSerial leftMotorUart(NULL_RX_PIN, LEFT_MOTOR_TX_PIN); 
+NewSoftSerial motorUart(NULL_RX_PIN, MOTOR_TX_PIN); 
 
 void setup() {
   setupPcInterface();
@@ -106,27 +115,19 @@ void setupPS2Controller() {
 
 void setupMotorControl() {
   // Init soft UART. Controller boards operate at 19.2kbits/sec
-  rightMotorUart.begin(19200);
-  leftMotorUart.begin(19200);
+  motorUart.begin(19200);
 
   // Clear Positions
-  rightMotorUart.print(CLEAR_POSITION);
-  leftMotorUart.print(CLEAR_POSITION);
+  clearPosition(BothMotors);
 
   // Reverse the left motor. Depends on how it's been wired
-  leftMotorUart.print(SET_ORIENTATION_AS_REVERSED);
+  setOrientationAsReversed(LeftMotor);
 
   // Set speed ramp rate (acceleration/deceleration)
-  rightMotorUart.print(SET_SPEED_RAMP_RATE);
-  rightMotorUart.print(rampSpeed);
-  leftMotorUart.print(SET_SPEED_RAMP_RATE);
-  leftMotorUart.print(rampSpeed);	
+  setSpeedRampRate(BothMotors, rampSpeed);
 
   // Set maximum speed
-  rightMotorUart.print(SET_SPEED_MAXIMUM);
-  rightMotorUart.print(highByte(maximumSpeed));
-  leftMotorUart.print(SET_SPEED_MAXIMUM);
-  leftMotorUart.print(lowByte(maximumSpeed));
+  setSpeedMaximum(BothMotors, maximumSpeed);
 }
 
 void loop() {
@@ -157,10 +158,10 @@ void checkForCollision() {
 void performCommand(char command) {
   switch (command) {
   case FORWARD:
-    travel(-1);
+    travelNumberOfPositions(BothMotors, -1);
     break;
   case BACKWARD:
-    travel(1);
+    travelNumberOfPositions(BothMotors, 1);
     break;
   case LEFT:
     rotate(1);
@@ -214,51 +215,70 @@ char getPS2ControllerInput() {
   return 0;	
 }
 
-// Move forward or backward by the number of encoder positions specified. Commands are cumulative.
-// Forward if position < 0
-// Backward if position > 0
-// Approx 1.33 cm per position
-void travel(int positions) {
-  log("Travelling " + String(positions) + " positions");
-  byte highByte = highByte(positions);
-  byte lowByte = lowByte(positions);
-
-  rightMotorUart.print(TRAVEL_NUMBER_OF_POSITIONS);
-  rightMotorUart.print(highByte);
-  rightMotorUart.print(lowByte);
-
-  leftMotorUart.print(TRAVEL_NUMBER_OF_POSITIONS);
-  leftMotorUart.print(highByte);
-  leftMotorUart.print(lowByte);
-}
-
 // Rotate right or left by the number of encoder positions specified. Commands are cumulative.
 // Right if position < 0
 // Left if position > 0
 // approx 4.5 degrees per position
 void rotate(int positions) {
   log("Rotating " + String(positions) + " positions");
-  leftMotorUart.print(TRAVEL_NUMBER_OF_POSITIONS);
-  leftMotorUart.print(highByte(positions));
-  leftMotorUart.print(lowByte(positions));
-
-  rightMotorUart.print(TRAVEL_NUMBER_OF_POSITIONS);
-  rightMotorUart.print(highByte(-1 * positions));
-  rightMotorUart.print(lowByte(-1 * positions));
+  travelNumberOfPositions(LeftMotor, positions);
+  travelNumberOfPositions(RightMotor, -1 * positions);
 }
 
 // Immediate stop without deceleration
 void emergencyStop() {
   log("Initating emergency stop");
-  rightMotorUart.print(CLEAR_POSITION);
-  leftMotorUart.print(CLEAR_POSITION);
+  clearPosition(BothMotors);
 }
 
 // Smooth stop with deceleration. Not cumulative.
 void smoothStop() {
   log("Initiating smooth stop");
-  rightMotorUart.print(0);
-  leftMotorUart.print(0);
+  travelNumberOfPositions(BothMotors, 0);
+}
+
+// Move forward or backward by the number of encoder positions specified. Commands are cumulative.
+// Forward if position < 0
+// Backward if position > 0
+// Approx 1.33 cm per position
+void travelNumberOfPositions(byte motorId, int positions) {
+  log("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId);
+  issueMotorCommand(TRVL, motorId, positions);
+}
+
+void clearPosition(byte motorId) {
+  log("Clearing positions for motorId(s): " + String((int)motorId));
+  issueMotorCommand(CLRP, motorId);	
+}
+
+void setOrientationAsReversed(byte motorId) {
+  log("Reversing orientation for motorId(s): " + String((int)motorId));
+  issueMotorCommand(SREV, motorId);
+}
+
+void setSpeedRampRate(byte motorId, byte rampSpeed) { 
+  log("Setting speed ramp rate for motorId(s): " + String((int)motorId) + " to: " + String((int)rampSpeed));
+  issueMotorCommand(SSRR, motorId, rampSpeed);
+}
+
+void setSpeedMaximum(byte motorId, int maximumSpeed) {
+  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed));
+  issueMotorCommand(SMAX, motorId, maximumSpeed);
+}
+
+void issueMotorCommand(byte command, byte motorId) {
+  motorUart.print(command + motorId);
+}
+
+void issueMotorCommand(byte command, byte motorId, byte param) {
+  motorUart.print(command + motorId);
+  motorUart.print(param);
+}
+
+void issueMotorCommand(byte command, byte motorId, int param) {
+  motorUart.print(command + motorId);
+  motorUart.print(highByte(param));
+  motorUart.print(lowByte(param));
 }
 
 // From: http://www.arduino.cc/en/Tutorial/Ping. See for using inches instead of cm.
@@ -294,10 +314,11 @@ long microsecondsToCentimeters(long microseconds) {
 }
 
 void log(String message) {
-  #ifdef AVATAR_DEBUG
-    Serial.println(message);
-  #endif
+#ifdef AVATAR_DEBUG
+  Serial.println(message);
+#endif
 }
+
 
 
 
