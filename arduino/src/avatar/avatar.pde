@@ -1,6 +1,6 @@
 // Digital Pin usage for reference: (Directions from the the perspective of the bot)
-// 0 - Right Position Controller
-// 1 - Left Position Controller
+// 2 - Right Position Controller
+// 3 - Left Position Controller
 // 4 - Front Ping Sensor
 // 8 - PS2 Controller Clock
 // 9 - PS2 Controller Command
@@ -14,9 +14,9 @@
 #define AVATAR_DEBUG
 
 // Pin definitions for motors
-#define RIGHT_MOTOR_TX_PIN 0
-#define LEFT_MOTOR_TX_PIN 1
-#define NULL_RX_PIN 12 //Will this work? Does it need to be 1? this is for motor rx
+#define RIGHT_MOTOR_TX_PIN 2
+#define LEFT_MOTOR_TX_PIN 3
+#define NULL_RX_PIN 12
 
 // Pin definitions for sensors
 #define FRONT_PING_SENSOR_PIN 4
@@ -141,6 +141,7 @@ void loop() {
     log("PS2 command received: " + ps2Command);
     performCommand(ps2Command);
   }
+  delay(100); // delay is necessary or Ping doesn't seem to work properly
 }
 
 void checkForCollision() {
@@ -282,6 +283,7 @@ long ping(int pingPin) {
 
   // convert the time into a distance
   distance = microsecondsToCentimeters(pingDuration);
+  return distance;
 }
 
 long microsecondsToCentimeters(long microseconds) {
