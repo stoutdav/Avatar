@@ -10,7 +10,7 @@
 // 12 - Unused Pin for soft serial Rx
 
 #include <PS2X_lib.h>
-#include <NewSoftSerial.h>   
+#include <NewSoftSerial.h>
 
 // Uncomment this for debugging output
 #define AVATAR_DEBUG
@@ -51,7 +51,7 @@ const byte RightMotor = 0x02;    //ID for right motor
 const byte BothMotors = 0x00;    //ID for both motrs
 
 // Configuration for motor controllers
-const byte rampSpeed = 5; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
+const byte rampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
 const int maximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
 
 // Constant definitions for front sonar sensor
@@ -59,25 +59,26 @@ const long minDistanceFromObject = 5; // in centimeters
 
 // Variables used for PS2 Controller
 PS2X ps2x;
-int error = 0; 
+int error = 0;
 byte type = 0;
 byte vibrate = 0;
 
 // Variables used for motor control
-NewSoftSerial motorUart(NULL_RX_PIN, MOTOR_TX_PIN); 
+NewSoftSerial motorUart(NULL_RX_PIN, MOTOR_TX_PIN);
 
 void setup() {
   setupPcInterface();
-  setupPS2Controller();
+  //  setupPS2Controller();
   setupMotorControl();
 }
 
 void setupPcInterface() {
-  Serial.begin(9600); 
+  Serial.begin(9600);
+  Serial.flush();
 }
 
 void setupPS2Controller() {
-  // PS2 Controller Setup GamePad(clock, command, attention, data, Pressures?, Rumble?) 
+  // PS2 Controller Setup GamePad(clock, command, attention, data, Pressures?, Rumble?)
   error = ps2x.config_gamepad(PS2_CLOCK_PIN, PS2_COMMAND_PIN, PS2_ATTENTION_PIN, PS2_DATA_PIN, false, false);
   if(error == 0){
     Serial.println("Found Controller, configured successful");
@@ -94,9 +95,6 @@ void setupPS2Controller() {
 
   else if(error == 3)
     Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
-
-  // What does this do?
-  // Serial.print(ps2x.Analog(1), HEX);
 
   type = ps2x.readType();
   switch(type) {
@@ -132,16 +130,16 @@ void setupMotorControl() {
 
 void loop() {
   checkForCollision();
-  char serialCommand = getSerialInput(); 
-  char ps2Command = getPS2ControllerInput();
+  char serialCommand = getSerialInput();
+  //  char ps2Command = getPS2ControllerInput();
   if (serialCommand > 0) {
-    log("Serial command received: " + serialCommand);
+    log("Serial command received: " + String(serialCommand));
     performCommand(serialCommand);
   }
-  if (ps2Command > 0) {
-    log("PS2 command received: " + ps2Command);
-    performCommand(ps2Command);
-  }
+  //  if (ps2Command > 0) {
+  //    log("PS2 command received: " + ps2Command);
+  //    performCommand(ps2Command);
+  //  }
   delay(100); // delay is necessary or Ping doesn't seem to work properly
 }
 
@@ -211,8 +209,8 @@ char getPS2ControllerInput() {
     if (xAxis == -1) {
       return LEFT;
     }
-  }	
-  return 0;	
+  }
+  return 0;
 }
 
 // Rotate right or left by the number of encoder positions specified. Commands are cumulative.
@@ -248,7 +246,7 @@ void travelNumberOfPositions(byte motorId, int positions) {
 
 void clearPosition(byte motorId) {
   log("Clearing positions for motorId(s): " + String((int)motorId));
-  issueMotorCommand(CLRP, motorId);	
+  issueMotorCommand(CLRP, motorId);
 }
 
 void setOrientationAsReversed(byte motorId) {
@@ -256,7 +254,7 @@ void setOrientationAsReversed(byte motorId) {
   issueMotorCommand(SREV, motorId);
 }
 
-void setSpeedRampRate(byte motorId, byte rampSpeed) { 
+void setSpeedRampRate(byte motorId, byte rampSpeed) {
   log("Setting speed ramp rate for motorId(s): " + String((int)motorId) + " to: " + String((int)rampSpeed));
   issueMotorCommand(SSRR, motorId, rampSpeed);
 }
@@ -267,18 +265,26 @@ void setSpeedMaximum(byte motorId, int maximumSpeed) {
 }
 
 void issueMotorCommand(byte command, byte motorId) {
-  motorUart.print(command + motorId);
+  byte fullCommand = command + motorId;
+  log("Issuing single byte command: 0x"  + String(fullCommand, HEX));
+  motorUart.print(fullCommand);
 }
 
 void issueMotorCommand(byte command, byte motorId, byte param) {
-  motorUart.print(command + motorId);
+  byte fullCommand = command + motorId;
+  log("Issuing two byte command: 0x"  + String(fullCommand, HEX) + ", param: " + String((int)param));
+  motorUart.print(fullCommand);
   motorUart.print(param);
 }
 
 void issueMotorCommand(byte command, byte motorId, int param) {
-  motorUart.print(command + motorId);
-  motorUart.print(highByte(param));
-  motorUart.print(lowByte(param));
+  byte fullCommand = command + motorId;
+  byte high = highByte(param);
+  byte low =  lowByte(param);
+  log("Issuing three byte command: 0x"  + String(fullCommand, HEX) + ", param:" + String(param));
+  motorUart.print(fullCommand);
+  motorUart.print(high);
+  motorUart.print(low);
 }
 
 // From: http://www.arduino.cc/en/Tutorial/Ping. See for using inches instead of cm.
@@ -318,9 +324,4 @@ void log(String message) {
   Serial.println(message);
 #endif
 }
-
-
-
-
-
 
