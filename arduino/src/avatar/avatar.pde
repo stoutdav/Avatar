@@ -21,6 +21,8 @@ const char FORWARD = 'f';
 const char BACKWARD = 'b';
 const char LEFT = 'l';
 const char RIGHT = 'r';
+const char EMERGENCY_STOP = 'S';
+const char SMOOTH_STOP = 's';
 
 // Constant definitions for Motor/Position Controllers:
 // http://www.parallax.com/Portals/0/Downloads/docs/prod/motors/27906-PositionClrKit-v1.1.pdf
@@ -97,6 +99,12 @@ void checkForCollision() {
 
 void performCommand(char command) {
   switch (command) {
+  case EMERGENCY_STOP:
+	emergencyStop();
+	break;
+  case SMOOTH_STOP:
+	smoothStop();
+	break;
   case FORWARD:
     travelNumberOfPositions(BothMotors, -1);
     break;
