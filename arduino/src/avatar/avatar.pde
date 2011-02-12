@@ -41,11 +41,14 @@ const byte RightMotor = 0x02;    //ID for right motor
 const byte BothMotors = 0x00;    //ID for both motrs
 
 // Configuration for motor controllers
-const byte rampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
-const int maximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
+const byte RampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
+const int MaximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
+const int ForwardDistance = 20;
+const int BackwardDistance = 10;
+const int RotationDistance = 5;
 
 // Constant definitions for front sonar sensor
-const long minDistanceFromObject = 5; // in centimeters
+const long MinFrontDistanceFromObject = 5; // in centimeters
 
 // Variables used for motor control
 NewSoftSerial motorUart(NULL_RX_PIN, MOTOR_TX_PIN);
@@ -71,10 +74,10 @@ void setupMotorControl() {
   setOrientationAsReversed(LeftMotor);
 
   // Set speed ramp rate (acceleration/deceleration)
-  setSpeedRampRate(BothMotors, rampSpeed);
+  setSpeedRampRate(BothMotors, RampSpeed);
 
   // Set maximum speed
-  setSpeedMaximum(BothMotors, maximumSpeed);
+  setSpeedMaximum(BothMotors, MaximumSpeed);
 }
 
 void loop() {
@@ -91,7 +94,7 @@ void checkForCollision() {
   // If bot is about to run into something immediately stop it
   // TODO(paul): Do this more elegantly by decelerating
   long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
-  if (distanceFromObject < minDistanceFromObject) {
+  if (distanceFromObject < MinFrontDistanceFromObject) {
     log("Collision imminent: " + String(distanceFromObject) + "cm from object");
     emergencyStop();
   }
@@ -106,16 +109,16 @@ void performCommand(char command) {
 	smoothStop();
 	break;
   case FORWARD:
-    travelNumberOfPositions(BothMotors, -1);
+    travelNumberOfPositions(BothMotors, -1 * ForwardDistance);
     break;
   case BACKWARD:
-    travelNumberOfPositions(BothMotors, 1);
+    travelNumberOfPositions(BothMotors, 1 * BackwardDistance);
     break;
   case LEFT:
-    rotate(1);
+    rotate(1 * RotationDistance);
     break;
   case RIGHT:
-    rotate(-1);
+    rotate(-1 * RotationDistance);
     break;
   }
 }
@@ -173,9 +176,9 @@ void setSpeedRampRate(byte motorId, byte rampSpeed) {
   issueMotorCommand(SSRR, motorId, rampSpeed);
 }
 
-void setSpeedMaximum(byte motorId, int maximumSpeed) {
-  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed));
-  issueMotorCommand(SMAX, motorId, maximumSpeed);
+void setSpeedMaximum(byte motorId, int MaximumSpeed) {
+  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(MaximumSpeed));
+  issueMotorCommand(SMAX, motorId, MaximumSpeed);
 }
 
 void issueMotorCommand(byte command, byte motorId) {
