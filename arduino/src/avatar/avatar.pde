@@ -10,7 +10,7 @@
 #define AVATAR_DEBUG
 
 // Pin definitions for motors
-#define MOTOR_TX_PIN 3
+#define MOTOR_PIN 3
 #define NULL_RX_PIN 12 // UNUSED PIN
 
 // Pin definitions for sensors
@@ -41,6 +41,7 @@ const byte RightMotor = 0x02;    //ID for right motor
 const byte BothMotors = 0x00;    //ID for both motrs
 
 // Configuration for motor controllers
+// According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
 const byte RampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
 const int MaximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
 const int ForwardDistance = 20;
@@ -51,7 +52,7 @@ const int RotationDistance = 5;
 const long MinFrontDistanceFromObject = 5; // in centimeters
 
 // Variables used for motor control
-NewSoftSerial motorUart(NULL_RX_PIN, MOTOR_TX_PIN);
+NewSoftSerial MotorSerial(NULL_RX_PIN, MOTOR_PIN);
 
 void setup() {
   setupPcInterface();
@@ -65,7 +66,7 @@ void setupPcInterface() {
 
 void setupMotorControl() {
   // Init soft UART. Controller boards operate at 19.2kbits/sec
-  motorUart.begin(19200);
+  MotorSerial.begin(19200);
 
   // Clear Positions
   clearPosition(BothMotors);
@@ -184,14 +185,14 @@ void setSpeedMaximum(byte motorId, int MaximumSpeed) {
 void issueMotorCommand(byte command, byte motorId) {
   byte fullCommand = command + motorId;
   log("Issuing single byte command: 0x"  + String(fullCommand, HEX));
-  motorUart.print(fullCommand);
+  sendToMotorSerial(fullCommand);
 }
 
 void issueMotorCommand(byte command, byte motorId, byte param) {
   byte fullCommand = command + motorId;
   log("Issuing two byte command: 0x"  + String(fullCommand, HEX) + ", param: " + String((int)param));
-  motorUart.print(fullCommand);
-  motorUart.print(param);
+  sendToMotorSerial(fullCommand);
+  sendToMotorSerial(param);
 }
 
 void issueMotorCommand(byte command, byte motorId, int param) {
@@ -199,9 +200,9 @@ void issueMotorCommand(byte command, byte motorId, int param) {
   byte high = highByte(param);
   byte low =  lowByte(param);
   log("Issuing three byte command: 0x"  + String(fullCommand, HEX) + ", param:" + String(param));
-  motorUart.print(fullCommand);
-  motorUart.print(high);
-  motorUart.print(low);
+  sendToMotorSerial(fullCommand);
+  sendToMotorSerial(high);
+  sendToMotorSerial(low);
 }
 
 // From: http://www.arduino.cc/en/Tutorial/Ping. See for using inches instead of cm.
@@ -236,6 +237,9 @@ long microsecondsToCentimeters(long microseconds) {
   return microseconds / 29 / 2;
 }
 
+void sendToMotorSerial(byte byteToSend) {
+	MotorSerial.print(byteToSend);
+}
 void log(String message) {
 #ifdef AVATAR_DEBUG
   Serial.println(message);
