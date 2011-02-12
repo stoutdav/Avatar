@@ -11,7 +11,6 @@
 
 // Pin definitions for motors
 #define MOTOR_PIN 3
-#define NULL_RX_PIN 12 // UNUSED PIN
 
 // Pin definitions for sensors
 #define FRONT_PING_SENSOR_PIN 4
@@ -39,6 +38,8 @@ const byte SSRR = 0x48;           //Set Speed Ramp Rate
 const byte LeftMotor  = 0x01;    //ID for left motor
 const byte RightMotor = 0x02;    //ID for right motor
 const byte BothMotors = 0x00;    //ID for both motrs
+const byte Arrived = 0xFF;
+const byte NotArrive = 0x00;
 
 // Configuration for motor controllers
 // According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
@@ -52,7 +53,7 @@ const int RotationDistance = 5;
 const long MinFrontDistanceFromObject = 5; // in centimeters
 
 // Variables used for motor control
-NewSoftSerial MotorSerial(NULL_RX_PIN, MOTOR_PIN);
+NewSoftSerial MotorSerial(MOTOR_PIN, MOTOR_PIN);
 
 void setup() {
   setupPcInterface();
@@ -167,6 +168,30 @@ void clearPosition(byte motorId) {
   issueMotorCommand(CLRP, motorId);
 }
 
+int getPosition(byte motorId) {
+  log("Getting position for motorId(s): " + String((int)motorId));
+  int position = queryMotor(QPOS, motorId);
+  log("Response for position for motorId(s): " + String((int)motorId) + " is: " + String(position));
+
+  return position;
+}
+
+int getSpeed(byte motorId) {
+  log("Getting speed for motorId(s): " + String((int)motorId));
+  int speed = queryMotor(QSPD, motorId);
+  log("Response for speed for motorId(s): " + String((int)motorId) + " is: " + String(speed));
+
+  return speed;
+}
+
+boolean hasArrived(byte motorId, byte tolerance) {
+  log("Checking arrival for motorId(s): " + String((int)motorId) + " with tolerance: " + String((int)motorId));
+  boolean hasArrived = queryMotor(CHFA, motorId, tolerance);
+  log("Response for has arrived for motorId(s): " + String((int)motorId) + " is: " + String(hasArrived));
+
+  return hasArrived;
+}
+
 void setOrientationAsReversed(byte motorId) {
   log("Reversing orientation for motorId(s): " + String((int)motorId));
   issueMotorCommand(SREV, motorId);
@@ -177,9 +202,14 @@ void setSpeedRampRate(byte motorId, byte rampSpeed) {
   issueMotorCommand(SSRR, motorId, rampSpeed);
 }
 
-void setSpeedMaximum(byte motorId, int MaximumSpeed) {
-  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(MaximumSpeed));
-  issueMotorCommand(SMAX, motorId, MaximumSpeed);
+void setSpeedMaximum(byte motorId, int maximumSpeed) {
+  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed));
+  issueMotorCommand(SMAX, motorId, maximumSpeed);
+}
+
+void setTransmissionDelay(byte motorId, byte delay) {
+  log("Setting transmission delay for motorId(s): " + String((int)motorId) + " to: " + String((int)delay));
+  issueMotorCommand(STXD, motorId, delay);
 }
 
 void issueMotorCommand(byte command, byte motorId) {
@@ -240,6 +270,44 @@ long microsecondsToCentimeters(long microseconds) {
 void sendToMotorSerial(byte byteToSend) {
 	MotorSerial.print(byteToSend);
 }
+
+// Used for QPOS - Query Position, QSPD - Query Speed
+int queryMotor(byte command, byte motorId) {
+	issueMotorCommand(command, motorId);
+
+	setPinToInput(MOTOR_PIN);
+	// Do we need to pause?
+	byte high = MotorSerial.read();
+	byte low = MotorSerial.read();
+	setPinToOutput(MOTOR_PIN);
+	
+	log("Received Response high byte: " + String(high, HEX) + " Low byte: " + String(low, HEX));
+	return (int)word(high, low);
+}
+
+// Only used for CHFA - Check Arrival
+boolean queryMotor(byte command, byte motorId, byte tolerance) {
+	issueMotorCommand(command, motorId, tolerance);
+	
+	setPinToInput(MOTOR_PIN);
+	// Do we need to pause?
+	byte response = MotorSerial.read();
+	setPinToOutput(MOTOR_PIN);
+
+	log("Received Response: " + String(response, HEX));
+	return response == Arrived; 
+}
+
+void setPinToInput(int pin) {
+	// Get Ready to receive
+	digitalWrite(pin, LOW);
+	pinMode(pin, INPUT);
+}
+
+void setPinToOutput(int pin) {
+	pinMode(pin, OUTPUT);
+}
+
 void log(String message) {
 #ifdef AVATAR_DEBUG
   Serial.println(message);
