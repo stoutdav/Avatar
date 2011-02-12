@@ -3,13 +3,7 @@
 // 1 - Serial Tx to PC
 // 3 - Position Controllers (Left has ID=1 and right has ID=2)
 // 4 - Front Ping Sensor
-// 8 - PS2 Controller Clock
-// 9 - PS2 Controller Command
-// 10 - PS2 Controller Attention
-// 11 - PS2 Controller Data
-// 12 - Unused Pin for soft serial Rx
 
-#include <PS2X_lib.h>
 #include <NewSoftSerial.h>
 
 // Uncomment this for debugging output
@@ -21,12 +15,6 @@
 
 // Pin definitions for sensors
 #define FRONT_PING_SENSOR_PIN 4
-
-// Pin definitions for PS2 controller
-#define PS2_CLOCK_PIN  8
-#define PS2_COMMAND_PIN 9
-#define PS2_ATTENTION_PIN 10
-#define PS2_DATA_PIN 11
 
 // Character constants for directional commands
 const char FORWARD = 'f';
@@ -57,58 +45,17 @@ const int maximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
 // Constant definitions for front sonar sensor
 const long minDistanceFromObject = 5; // in centimeters
 
-// Variables used for PS2 Controller
-PS2X ps2x;
-int error = 0;
-byte type = 0;
-byte vibrate = 0;
-
 // Variables used for motor control
 NewSoftSerial motorUart(NULL_RX_PIN, MOTOR_TX_PIN);
 
 void setup() {
   setupPcInterface();
-  //  setupPS2Controller();
   setupMotorControl();
 }
 
 void setupPcInterface() {
   Serial.begin(9600);
   Serial.flush();
-}
-
-void setupPS2Controller() {
-  // PS2 Controller Setup GamePad(clock, command, attention, data, Pressures?, Rumble?)
-  error = ps2x.config_gamepad(PS2_CLOCK_PIN, PS2_COMMAND_PIN, PS2_ATTENTION_PIN, PS2_DATA_PIN, false, false);
-  if(error == 0){
-    Serial.println("Found Controller, configured successful");
-    Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
-    Serial.println("holding L1 or R1 will print out the analog stick values.");
-    Serial.println("Go to www.billporter.info for updates and to report bugs.");
-  }
-
-  else if(error == 1)
-    Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
-
-  else if(error == 2)
-    Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
-
-  else if(error == 3)
-    Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
-
-  type = ps2x.readType();
-  switch(type) {
-  case 0:
-    Serial.println("Unknown Controller type");
-    break;
-  case 1:
-    Serial.println("DualShock Controller Found");
-    break;
-  case 2:
-    // Guitar Hero Controller not supported. TODO(paul): error?
-    Serial.println("GuitarHero Controller Found");
-    break;
-  }
 }
 
 void setupMotorControl() {
@@ -131,15 +78,10 @@ void setupMotorControl() {
 void loop() {
   checkForCollision();
   char serialCommand = getSerialInput();
-  //  char ps2Command = getPS2ControllerInput();
   if (serialCommand > 0) {
     log("Serial command received: " + String(serialCommand));
     performCommand(serialCommand);
   }
-  //  if (ps2Command > 0) {
-  //    log("PS2 command received: " + ps2Command);
-  //    performCommand(ps2Command);
-  //  }
   delay(100); // delay is necessary or Ping doesn't seem to work properly
 }
 
@@ -173,42 +115,6 @@ void performCommand(char command) {
 char getSerialInput() {
   if (Serial.available() > 0) {
     return Serial.read();
-  }
-  return 0;
-}
-
-char getPS2ControllerInput() {
-  if(error == 1)
-    //skip if no controller found
-    return 0;
-
-  ps2x.read_gamepad(); //read controller. no params used because rumble not enabled. Should be called at least once per second
-
-    // If the right analog stick has not been pressed then do nothing.
-  if (!ps2x.Button(PSB_R1)) {
-    return 0;
-  }
-
-  // TODO(paul): handle more than one axis at a time
-  int yAxis = map(ps2x.Analog(PSS_RY),  0, 255, -1, 1);
-  int xAxis = map(ps2x.Analog(PSS_RX),  0, 255, -1, 1);
-
-  if (yAxis != 0) {
-    if (yAxis == 1) {
-      return FORWARD;
-    }
-    if (yAxis == -1) {
-      return BACKWARD;
-    }
-  }
-
-  if (xAxis != 0) {
-    if (xAxis == 1) {
-      return RIGHT;
-    }
-    if (xAxis == -1) {
-      return LEFT;
-    }
   }
   return 0;
 }
