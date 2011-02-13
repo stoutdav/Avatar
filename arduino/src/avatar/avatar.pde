@@ -44,10 +44,10 @@ const byte NotArrive = 0x00;
 // Configuration for motor controllers
 // According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
 const byte RampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
-const int MaximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
-const int ForwardDistance = 20;
-const int BackwardDistance = 10;
-const int RotationDistance = 5;
+const unsigned int MaximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
+const unsigned int ForwardDistance = 20;
+const unsigned int BackwardDistance = 10;
+const unsigned int RotationDistance = 5;
 
 // Constant definitions for front sonar sensor
 const long MinFrontDistanceFromObject = 5; // in centimeters
@@ -83,7 +83,7 @@ void setupMotorControl() {
 }
 
 void loop() {
-  checkForCollision();
+  checkForForwardCollision();
   char serialCommand = getSerialInput();
   if (serialCommand > 0) {
     log("Serial command received: " + String(serialCommand));
@@ -92,14 +92,22 @@ void loop() {
   delay(100); // delay is necessary or Ping doesn't seem to work properly
 }
 
-void checkForCollision() {
+void checkForForwardCollision() {
   // If bot is about to run into something immediately stop it
   // TODO(paul): Do this more elegantly by decelerating
-  long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
-  if (distanceFromObject < MinFrontDistanceFromObject) {
-    log("Collision imminent: " + String(distanceFromObject) + "cm from object");
-    emergencyStop();
+  // Only check for collision if there is forward motion. i.e. both motors have a negative speed
+  // Assumption: Since QPOS has a signed return value this will work.
+  if (hasForwardMotion()) {
+	long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
+	if (distanceFromObject < MinFrontDistanceFromObject) {
+		log("Collision imminent: " + String(distanceFromObject) + "cm from object");
+		emergencyStop();
+	}
   }
+}
+
+boolean hasForwardMotion() {
+	return getSpeed(LeftMotor) * getSpeed(RightMotor) > 0;
 }
 
 void performCommand(char command) {
@@ -300,12 +308,13 @@ boolean queryMotor(byte command, byte motorId, byte tolerance) {
 
 void setPinToInput(int pin) {
 	// Get Ready to receive
-	digitalWrite(pin, LOW);
+	digitalWrite(pin, LOW); // Or pull it up?
 	pinMode(pin, INPUT);
 }
 
 void setPinToOutput(int pin) {
 	pinMode(pin, OUTPUT);
+	digitalWrite(pin, HIGH);
 }
 
 void log(String message) {
