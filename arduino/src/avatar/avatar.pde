@@ -10,7 +10,7 @@
 #define AVATAR_DEBUG
 
 // Pin definitions for motors
-#define MOTOR_PIN 3
+#define MOTOR_TX_RX_PIN 3
 
 // Pin definitions for sensors
 #define FRONT_PING_SENSOR_PIN 4
@@ -53,7 +53,7 @@ const unsigned int RotationDistance = 5;
 const long MinFrontDistanceFromObject = 5; // in centimeters
 
 // Variables used for motor control
-NewSoftSerial MotorSerial(MOTOR_PIN, MOTOR_PIN);
+NewSoftSerial MotorSerial(MOTOR_TX_RX_PIN, MOTOR_TX_RX_PIN);
 
 void setup() {
   setupPcInterface();
@@ -98,26 +98,26 @@ void checkForForwardCollision() {
   // Only check for collision if there is forward motion. i.e. both motors have a negative speed
   // Assumption: Since QPOS has a signed return value this will work.
   if (hasForwardMotion()) {
-	long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
-	if (distanceFromObject < MinFrontDistanceFromObject) {
-		log("Collision imminent: " + String(distanceFromObject) + "cm from object");
-		emergencyStop();
-	}
+    long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
+    if (distanceFromObject < MinFrontDistanceFromObject) {
+      log("Collision imminent: " + String(distanceFromObject) + "cm from object");
+      emergencyStop();
+    }
   }
 }
 
 boolean hasForwardMotion() {
-	return getSpeed(LeftMotor) * getSpeed(RightMotor) > 0;
+  return getSpeed(LeftMotor) * getSpeed(RightMotor) > 0;
 }
 
 void performCommand(char command) {
   switch (command) {
   case EMERGENCY_STOP:
-	emergencyStop();
-	break;
+    emergencyStop();
+    break;
   case SMOOTH_STOP:
-	smoothStop();
-	break;
+    smoothStop();
+    break;
   case FORWARD:
     travelNumberOfPositions(BothMotors, -1 * ForwardDistance);
     break;
@@ -276,45 +276,49 @@ long microsecondsToCentimeters(long microseconds) {
 }
 
 void sendToMotorSerial(byte byteToSend) {
-	MotorSerial.print(byteToSend);
+  setMotorPinToTx();
+  MotorSerial.print(byteToSend);
 }
 
 // Used for QPOS - Query Position, QSPD - Query Speed
 int queryMotor(byte command, byte motorId) {
-	issueMotorCommand(command, motorId);
+  issueMotorCommand(command, motorId);
+  setMotorPinToRx();
+  // Do we need to pause?
+  byte high = MotorSerial.read();
+  byte low = MotorSerial.read();
 
-	setPinToInput(MOTOR_PIN);
-	// Do we need to pause?
-	byte high = MotorSerial.read();
-	byte low = MotorSerial.read();
-	setPinToOutput(MOTOR_PIN);
-	
-	log("Received Response high byte: " + String(high, HEX) + " Low byte: " + String(low, HEX));
-	return (int)word(high, low);
+  log("Received Response high byte: " + String(high, HEX) + " Low byte: " + String(low, HEX));
+  return (int)word(high, low);
 }
 
 // Only used for CHFA - Check Arrival
 boolean queryMotor(byte command, byte motorId, byte tolerance) {
-	issueMotorCommand(command, motorId, tolerance);
-	
-	setPinToInput(MOTOR_PIN);
-	// Do we need to pause?
-	byte response = MotorSerial.read();
-	setPinToOutput(MOTOR_PIN);
+  issueMotorCommand(command, motorId, tolerance);
+  setMotorPinToRx();
+  // Do we need to pause?
+  byte response = MotorSerial.read();
 
-	log("Received Response: " + String(response, HEX));
-	return response == Arrived; 
+  log("Received Response: " + String(response, HEX));
+  return response == Arrived; 
 }
 
-void setPinToInput(int pin) {
-	// Get Ready to receive
-	digitalWrite(pin, LOW); // Or pull it up?
-	pinMode(pin, INPUT);
+void setMotorPinToTx() {
+  setPinToTx(MOTOR_TX_RX_PIN);
 }
 
-void setPinToOutput(int pin) {
-	pinMode(pin, OUTPUT);
-	digitalWrite(pin, HIGH);
+void setPinToTx(int pin) {
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, HIGH);
+}
+
+void setMotorPinToRx() {
+  setPinToRx(MOTOR_TX_RX_PIN);
+}
+
+void setPinToRx(int pin) {
+  pinMode(pin, INPUT);
+  digitalWrite(pin, HIGH);
 }
 
 void log(String message) {
@@ -322,4 +326,5 @@ void log(String message) {
   Serial.println(message);
 #endif
 }
+
 
