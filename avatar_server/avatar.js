@@ -21,6 +21,9 @@ var server = http.createServer(function (request, response) {
 		case ".ico":
 			contentType = "image/x-icon";
 			break;
+		case ".png":
+			contentType = "image/png";
+			break;
 	}
 	path.exists(filePath, function (exists) {
 		if (exists) {
