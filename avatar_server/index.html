@@ -4,7 +4,8 @@
     <title>Avatar Control Center</title>
     <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
     <link type="text/css" href="css/ui-darkness/jquery-ui-1.8.13.custom.css" rel="Stylesheet">
-    <link type="text/css" href="css/layout-default-latest.css" rel="Stylesheet">
+    <link rel="stylesheet" href="css/blueprint/screen.css" type="text/css" media="screen, projection">
+    <link rel="stylesheet" href="css/blueprint/print.css" type="text/css" media="print">
 
 </head>
 <body>
@@ -12,13 +13,7 @@
 <script type="text/javascript" src="js/socket.io.js"></script>
 <script type="text/javascript" src="js/jquery-1.5.1.min.js"></script>
 <script type="text/javascript" src="js/jquery-ui-1.8.13.custom.min.js"></script>
-<script type="text/javascript" src="js/jquery.layout-latest.js"></script>
-<script type="text/javascript">
 
-    $(document).ready(function () {
-        $('body').layout({ applyDefaultStyles: true });
-    });
-</script>
 
 
 <script>
@@ -83,14 +78,27 @@
 
 
 </script>
-<div class="ui-layout-center">
-    <button id="fwd">FWD</button>
-    <button id="rev">REV</button>
-    <button id="right">RIGHT</button>
-    <button id="left">LEFT</button>
-    <button id="stop">STOP</button>
+    <div class="container showgrid">
+        <div class="span-24 prepend-1">
+            <button id="fwd">FWD</button>
+        </div>
+        <div class="span-1">
+            <button id="left">LEFT</button>
+        </div>
+        <div class="span-1">
+            <button id="stop">STOP</button>
+        </div>
+        <div class="span-1 last ">
+            <button id="right">RIGHT</button>
+        </div>
+        <div class="span-24 prepend-1">
+            <button id="rev">REV</button>
+        </div>
+
+
+    </div>
+
     <button id="emergency_stop">EMERGENCY STOP</button>
-</div>
 <div class="ui-layout-north">Avatar messages</div>
 <div class="ui-layout-south">Debug output</div>
 <div class="ui-layout-east">Settings</div>
