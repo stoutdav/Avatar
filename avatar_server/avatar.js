@@ -7,7 +7,7 @@ var server = http.createServer(function (request, response) {
 	console.log("Request for file", filePath);
 			
 	if (filePath == "./")
-		filePath = "./index.htm"
+		filePath = "./index.html"
 					
 	var fileExtension = path.extname(filePath);
 	var contentType = "text/html";
