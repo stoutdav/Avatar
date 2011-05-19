@@ -45,25 +45,39 @@
     var REVERSE = 2;
     var RIGHT = 3;
     var LEFT = 4;
+    var STOP = 5;
+    var EMERGENCY_STOP = 6;
 
     $(function() {
         $("#fwd").button();
         $("#fwd").click(function() {
             sendMessageToServer(FORWARD)
         });
+
         $("#rev").button();
         $("#rev").click(function() {
             sendMessageToServer(REVERSE)
         });
+
         $("#right").button();
         $("#right").click(function() {
             sendMessageToServer(RIGHT)
         });
+
         $("#left").button();
         $("#left").click(function() {
             sendMessageToServer(LEFT)
         });
 
+        $("#stop").button();
+        $("#stop").click(function() {
+            sendMessageToServer(STOP)
+        });
+
+        $("#emergency_stop").button();
+        $("#emergency_stop").click(function() {
+            sendMessageToServer(EMERGENCY_STOP)
+        });
 
     });
 
@@ -74,10 +88,12 @@
     <button id="rev">REV</button>
     <button id="right">RIGHT</button>
     <button id="left">LEFT</button>
+    <button id="stop">STOP</button>
+    <button id="emergency_stop">EMERGENCY STOP</button>
 </div>
-<div class="ui-layout-north">North</div>
-<div class="ui-layout-south">South</div>
-<div class="ui-layout-east">East</div>
+<div class="ui-layout-north">Avatar messages</div>
+<div class="ui-layout-south">Debug output</div>
+<div class="ui-layout-east">Settings</div>
 <div class="ui-layout-west">West</div>
 
 
