@@ -18,6 +18,9 @@ var server = http.createServer(function (request, response) {
 		case ".css":
 			contentType = "text/css";
 			break;
+		case ".ico":
+			contentType = "image/x-icon";
+			break;
 	}
 	path.exists(filePath, function (exists) {
 		if (exists) {
@@ -25,6 +28,7 @@ var server = http.createServer(function (request, response) {
 				if (error) {
 					send500(response)
 				} else {
+					console.log("Serving", filePath);
 					response.writeHead(200, {"Content-Type" : contentType});
 					response.write(content, 'utf8');
 					response.end();				
