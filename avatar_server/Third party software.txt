@@ -1,0 +1,8 @@
+Blueprint
+jquery
+jquery-ui
+node.js
+socket.io
+arduino
+Newsoftserial
+Serialport
