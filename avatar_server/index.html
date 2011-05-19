@@ -1,0 +1,34 @@
+<!doctype html public "-//w3c//dtd html 4.01//en"
+   "http://www.w3.org/tr/html4/strict.dtd">
+<html>
+   <head>
+      <title>Avatar Control Center</title>
+   </head>
+   <body>
+		
+		<script 
+			// Serve this up locally? Use express maybe?
+				src="http://cdn.socket.io/stable/socket.io.js">
+			</script> 
+		<script> 
+			var socket = new io.Socket("localhost", {port: 80}); 
+			socket.connect();
+			socket.on('connect', function(){ 
+				console.log("Client: Client connected to server");
+				}); 
+			socket.on('message', function(data){
+				console.log("Client: Received message from server", data);
+				}); 
+			socket.on('disconnect', function(){ 
+				console.log("Client: Client disconnected from server");
+				}); 
+			
+			function sendMessageToServer(message) {
+				socket.send(message);
+			}
+		</script> 
+		<script>
+			sendMessageToServer(3);
+		</script>
+   </body>
+</html>
