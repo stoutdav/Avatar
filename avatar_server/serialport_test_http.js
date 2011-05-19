@@ -1,6 +1,6 @@
 console.log("starting");
 
-var http = require("http"), io = require("socket.io"), serialport = require("serialport"), fs = require("fs"), path = require("path");
+var http = require("http"), io = require("socket.io"), serialport = require("serialport"), fs = require("fs"), path = require("path"), url = require("url");
 
 var server = http.createServer(function (request, response) {
 	var filePath = "." + request.url;
