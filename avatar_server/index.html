@@ -6,6 +6,8 @@
     <link type="text/css" href="css/ui-darkness/jquery-ui-1.8.13.custom.css" rel="Stylesheet">
     <link rel="stylesheet" href="css/blueprint/screen.css" type="text/css" media="screen, projection">
     <link rel="stylesheet" href="css/blueprint/print.css" type="text/css" media="print">
+    <link rel="stylesheet" href="css/layout-default-latest.css" type="text/css">
+    <link rel="stylesheet" href="css/avatar.css" type="text/css">
 
 </head>
 <body>
@@ -13,8 +15,13 @@
 <script type="text/javascript" src="js/socket.io.js"></script>
 <script type="text/javascript" src="js/jquery-1.5.1.min.js"></script>
 <script type="text/javascript" src="js/jquery-ui-1.8.13.custom.min.js"></script>
-
-
+<script type="text/javascript" src="js/jquery.layout-latest.js"></script>
+<script>
+    $(document).ready(function () {
+        $('body').layout({
+                    applyDefaultStyles: true });
+    });
+</script>
 
 <script>
     var socket = new io.Socket("localhost", {port: 80});
@@ -74,35 +81,159 @@
             sendMessageToServer(EMERGENCY_STOP)
         });
 
+        $("#debug").button();
+        $("#debug").click(function() {
+//            sendMessageToServer(EMERGENCY_STOP)
+        });
+
+        $(function() {
+            $("#rampSpeedSlider").slider({
+                        range: "min",
+                        min: 0,
+                        max: 100,
+                        value: 60,
+                        slide: function(event, ui) {
+                            $("#rampSpeed").val(ui.value);
+                        }
+                    });
+            $("#rampSpeed").val($("#rampSpeedSlider").slider("value"));
+        });
+
+        $(function() {
+            $("#maxSpeedSlider").slider({
+                        range: "min",
+                        min: 0,
+                        max: 100,
+                        value: 60,
+                        slide: function(event, ui) {
+                            $("#maxSpeed").val(ui.value);
+                        }
+                    });
+            $("#maxSpeed").val($("#maxSpeedSlider").slider("value"));
+        });
+
+        $(function() {
+            $("#forwardDistanceSlider").slider({
+                        range: "min",
+                        min: 0,
+                        max: 100,
+                        value: 60,
+                        slide: function(event, ui) {
+                            $("#forwardDistance").val(ui.value);
+                        }
+                    });
+            $("#forwardDistance").val($("#forwardDistanceSlider").slider("value"));
+        });
+
+        $(function() {
+            $("#reverseDistanceSlider").slider({
+                        range: "min",
+                        min: 0,
+                        max: 100,
+                        value: 60,
+                        slide: function(event, ui) {
+                            $("#reverseDistance").val(ui.value);
+                        }
+                    });
+            $("#reverseDistance").val($("#reverseDistanceSlider").slider("value"));
+        });
+
+        $(function() {
+            $("#rotationDistanceSlider").slider({
+                        range: "min",
+                        min: 0,
+                        max: 100,
+                        value: 60,
+                        slide: function(event, ui) {
+                            $("#rotationDistance").val(ui.value);
+                        }
+                    });
+            $("#rotationDistance").val($("#rotationDistanceSlider").slider("value"));
+        });
+
+        $(function() {
+            $("#frontSensorSlider").slider({
+                        range: "min",
+                        min: 0,
+                        max: 100,
+                        value: 60,
+                        slide: function(event, ui) {
+                            $("#frontSensor").val(ui.value);
+                        }
+                    });
+            $("#frontSensor").val($("#frontSensorSlider").slider("value"));
+        });
+
     });
 
 
 </script>
+<div class="ui-layout-center">
     <div class="container showgrid">
-        <div class="span-24 prepend-1">
+
+        <div class="span-24 prepend-2">
             <button id="fwd">FWD</button>
         </div>
-        <div class="span-1">
+        <div class="span-2">
             <button id="left">LEFT</button>
         </div>
-        <div class="span-1">
+        <div class="span-2">
             <button id="stop">STOP</button>
         </div>
-        <div class="span-1 last ">
+        <div class="span-2 colborder">
             <button id="right">RIGHT</button>
         </div>
-        <div class="span-24 prepend-1">
+
+        <div class="span-24 prepend-2">
             <button id="rev">REV</button>
+        </div>
+        <div class="span-24 prepend-1">
+            <button id="emergency_stop">EMERGENCY STOP</button>
         </div>
 
 
     </div>
+</div>
 
-    <button id="emergency_stop">EMERGENCY STOP</button>
-<div class="ui-layout-north">Avatar messages</div>
-<div class="ui-layout-south">Debug output</div>
-<div class="ui-layout-east">Settings</div>
-<div class="ui-layout-west">West</div>
+<div class="ui-layout-east">
+        <label for="rampSpeed">Ramp speed:</label>
+        <input type="text" id="rampSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <div id="rampSpeedSlider"></div>
+
+        <label for="maxSpeed">Max speed:</label>
+        <input type="text" id="maxSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <div id="maxSpeedSlider"></div>
+
+        <label for="forwardDistance">Forward distance:</label>
+        <input type="text" id="forwardDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <div id="forwardDistanceSlider"></div>
+
+        <label for="reverseDistance">Reverse distance:</label>
+        <input type="text" id="reverseDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <div id="reverseDistanceSlider"></div>
+
+        <label for="rotationDistance">Rotation distance:</label>
+        <input type="text" id="rotationDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <div id="rotationDistanceSlider"></div>
+    <hr>
+        <label for="frontSensor">Front sensor distance warning:</label>
+        <input type="text" id="frontSensor" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <div id="frontSensorSlider"></div>
+
+
+</div>
+<div class="ui-layout-north">
+    Avatar messages
+</div>
+
+<div class="ui-layout-south">
+    <input type="checkbox" id="debug"/><label for="debug">Debug</label>
+    Debug output
+</div>
+
+<!--<div class="ui-layout-west">-->
+<!--West-->
+<!--</div>-->
 
 
 </body>
