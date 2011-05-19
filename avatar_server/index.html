@@ -19,7 +19,13 @@
 <script>
     $(document).ready(function () {
         $('body').layout({
-                    applyDefaultStyles: true });
+                    applyDefaultStyles: true,
+                    resizable: false,
+                    north__size: 100,
+                    north__resizable: true,
+                    south__size: 100,
+                    south__resizable: true
+                });
     });
 </script>
 
@@ -94,7 +100,11 @@
                         value: 60,
                         slide: function(event, ui) {
                             $("#rampSpeed").val(ui.value);
+                        },
+                        change: function(event, ui) {
+                            sendMessageToServer(ui.value);
                         }
+
                     });
             $("#rampSpeed").val($("#rampSpeedSlider").slider("value"));
         });
@@ -169,7 +179,7 @@
 
 </script>
 <div class="ui-layout-center">
-    <div class="container showgrid">
+    <div class="container">
 
         <div class="span-24 prepend-2">
             <button id="fwd">FWD</button>
