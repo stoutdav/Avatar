@@ -79,7 +79,9 @@ var server = http.createServer(function (request, response) {
 	sp.on('data', function (data) {
             // Wait for a connection before trying to send responses
             if (webClient) {
-                webClient.send("avatar says: " + data);
+                var message = new String(data);
+                console.log("Server: Client sending a message: " +  message);
+                webClient.send(message);
             }
 		});
 	

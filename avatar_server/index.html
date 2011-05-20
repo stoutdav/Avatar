@@ -32,17 +32,42 @@
 <script>
     var START_CHAR = "!";
     var STOP_CHAR = "?";
+    var messageFromServer = "";
+    var inMessage = false;
     var socket = new io.Socket("localhost", {port: 80});
     socket.connect();
     socket.on('connect', function() {
         console.log("Client: Client connected to server");
     });
     socket.on('message', function(data) {
-        console.log("Client: Received message from server", data);
+
+        // Need to build message because it comes back in chunks
+        if (data.charAt(0) == START_CHAR && data.charAt(data.length - 1) == STOP_CHAR) {
+            logMessageReceivedFromServer(data);
+            return;
+        }
+
+        if (data.charAt(0) == START_CHAR) {
+            inMessage = true;
+            messageFromServer = data.substring(1, data.length - 1);
+            return;
+        }
+
+        if (data.charAt(data.length - 1) == STOP_CHAR && inMessage) {
+            messageFromServer = messageFromServer.concat(data.substring(0, data.length - 2));
+            logMessageReceivedFromServer(messageFromServer);
+            messageFromServer = "";
+            inMessage = false;
+        }
     });
+
     socket.on('disconnect', function() {
         console.log("Client: Client disconnected from server");
     });
+
+    function logMessageReceivedFromServer(message) {
+        console.log("Client: Received message from server", message);
+    }
 
     function sendMessageToServer(message) {
         socket.send(START_CHAR + message + STOP_CHAR);

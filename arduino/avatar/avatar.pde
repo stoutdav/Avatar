@@ -107,7 +107,7 @@ void checkForForwardCollision() {
     long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
     if (distanceFromObject < MinFrontDistanceFromObject) {
       log("Collision imminent: " + String(distanceFromObject) + "cm from object");
-      response("Collision imminent: " + String(distanceFromObject) + "cm from object");
+      respond("Collision imminent: " + String(distanceFromObject) + "cm from object");
       emergencyStop();
     }
   }
@@ -353,5 +353,7 @@ void log(String message) {
 }
 
 void respond(String message) {
-  Serial.println("", START_CHAT message, String(STOP_CHAR));
+  Serial.print(START_CHAR);
+  Serial.print(message);
+  Serial.print(STOP_CHAR);
 }
