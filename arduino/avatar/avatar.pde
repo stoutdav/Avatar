@@ -7,13 +7,17 @@
 #include <NewSoftSerial.h>
 
 // Uncomment this for debugging output
-#define AVATAR_DEBUG
+//#define AVATAR_DEBUG
 
 // Pin definitions for motors
 #define MOTOR_TX_RX_PIN 3
 
 // Pin definitions for sensors
 #define FRONT_PING_SENSOR_PIN 4
+
+// Character constants for serial interface
+const char START_CHAR = '!';
+const char STOP_CHAR = '?';
 
 // Character constants for directional commands
 const char FORWARD = 'f';
@@ -84,10 +88,12 @@ void setupMotorControl() {
 
 void loop() {
   checkForForwardCollision();
-  char serialCommand = getSerialInput();
-  if (serialCommand > 0) {
-    log("Serial command received: " + String(serialCommand));
-    performCommand(serialCommand);
+  if (Serial.available()) {
+    String serialCommand = getSerialInput();
+    if (serialCommand > 0) {
+      log("Serial command received: " + String(serialCommand));
+      performCommand(serialCommand);
+    }
   }
   delay(100); // delay is necessary or Ping doesn't seem to work properly
 }
@@ -101,6 +107,7 @@ void checkForForwardCollision() {
     long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
     if (distanceFromObject < MinFrontDistanceFromObject) {
       log("Collision imminent: " + String(distanceFromObject) + "cm from object");
+      response("Collision imminent: " + String(distanceFromObject) + "cm from object");
       emergencyStop();
     }
   }
@@ -110,8 +117,11 @@ boolean hasForwardMotion() {
   return getSpeed(LeftMotor) * getSpeed(RightMotor) > 0;
 }
 
-void performCommand(char command) {
-  switch (command) {
+void performCommand(String command) {
+  char baseCommand = command[0];
+  int param = command.substring(1, 4).toInt();
+  log("Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param));
+  switch (baseCommand) {
   case EMERGENCY_STOP:
     emergencyStop();
     break;
@@ -133,11 +143,26 @@ void performCommand(char command) {
   }
 }
 
-char getSerialInput() {
-  if (Serial.available() > 0) {
-    return Serial.read();
+String getSerialInput() {
+  char command[4]; // 4 char commands + string end 
+  delay(100);
+  char val = Serial.read();
+  if (val == START_CHAR) {
+    log("Start Char Rcvd");
+    int charsRead = 0;
+    while (Serial.available()) {
+      val = Serial.read();
+      if (val == STOP_CHAR) {
+        log("Stop Char Rcvd");
+        command[charsRead++] = '\0';
+        log("Received Command: " + String(command));  
+        return command;
+      } 
+      command[charsRead] = val;
+      charsRead++;
+    }
   }
-  return 0;
+  return command;
 }
 
 // Rotate right or left by the number of encoder positions specified. Commands are cumulative.
@@ -323,8 +348,10 @@ void setPinToRx(int pin) {
 
 void log(String message) {
 #ifdef AVATAR_DEBUG
-  Serial.println(message);
+  Serial.println("#DEBUG", message);
 #endif
 }
 
-
+void response(String message) {
+  Serial.println(message);
+}
