@@ -30,6 +30,8 @@
 </script>
 
 <script>
+    // Warning constants
+    var COLLISION_WARNING = "C";
     var START_CHAR = "!";
     var STOP_CHAR = "?";
     var messageFromServer = "";
@@ -43,7 +45,7 @@
 
         // Need to build message because it comes back in chunks
         if (data.charAt(0) == START_CHAR && data.charAt(data.length - 1) == STOP_CHAR) {
-            logMessageReceivedFromServer(data);
+            logMessageReceivedFromServer(data.substring(1, data.length - 1));
             return;
         }
 
@@ -54,7 +56,7 @@
         }
 
         if (data.charAt(data.length - 1) == STOP_CHAR && inMessage) {
-            messageFromServer = messageFromServer.concat(data.substring(0, data.length - 2));
+            messageFromServer = messageFromServer.concat(data.substring(0, data.length - 1));
             logMessageReceivedFromServer(messageFromServer);
             messageFromServer = "";
             inMessage = false;
@@ -65,7 +67,17 @@
         console.log("Client: Client disconnected from server");
     });
 
-    function logMessageReceivedFromServer(message) {
+    function logMessageReceivedFromServer(code) {
+        var message;
+        var messageType = code.charAt(0);
+        switch (messageType) {
+            case COLLISION_WARNING:
+                message = "Collision warning. Front sensor is " + code.substr(1, code.length - 1) + " cm from object."
+                break;
+            default:
+                message = "Unknown Message"
+
+        }
         console.log("Client: Received message from server", message);
     }
 
@@ -76,7 +88,6 @@
 
 <script>
     // Command constants
-
     var FORWARD = 'f';
     var REVERSE = 'b';
     var RIGHT = 'r';
@@ -234,28 +245,34 @@
 </div>
 
 <div class="ui-layout-east">
-        <label for="rampSpeed">Ramp speed:</label>
-        <input type="text" id="rampSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <label for="rampSpeed">Ramp speed:</label>
+    <input type="text" id="rampSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+
     <div id="rampSpeedSlider"></div>
 
-        <label for="maxSpeed">Max speed:</label>
-        <input type="text" id="maxSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <label for="maxSpeed">Max speed:</label>
+    <input type="text" id="maxSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+
     <div id="maxSpeedSlider"></div>
 
-        <label for="forwardDistance">Forward distance:</label>
-        <input type="text" id="forwardDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <label for="forwardDistance">Forward distance:</label>
+    <input type="text" id="forwardDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+
     <div id="forwardDistanceSlider"></div>
 
-        <label for="reverseDistance">Reverse distance:</label>
-        <input type="text" id="reverseDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <label for="reverseDistance">Reverse distance:</label>
+    <input type="text" id="reverseDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+
     <div id="reverseDistanceSlider"></div>
 
-        <label for="rotationDistance">Rotation distance:</label>
-        <input type="text" id="rotationDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <label for="rotationDistance">Rotation distance:</label>
+    <input type="text" id="rotationDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+
     <div id="rotationDistanceSlider"></div>
     <hr>
-        <label for="frontSensor">Front sensor distance warning:</label>
-        <input type="text" id="frontSensor" style="border:0; color:#f6931f; font-weight:bold;"/>
+    <label for="frontSensor">Front sensor distance warning:</label>
+    <input type="text" id="frontSensor" style="border:0; color:#f6931f; font-weight:bold;"/>
+
     <div id="frontSensorSlider"></div>
 
 

@@ -19,6 +19,9 @@
 const char START_CHAR = '!';
 const char STOP_CHAR = '?';
 
+// Character constants for return codes
+const char COLLISION_WARNING = 'C'; // takes 3 chars representing distance in cms
+
 // Character constants for directional commands
 const char FORWARD = 'f';
 const char BACKWARD = 'b';
@@ -107,7 +110,7 @@ void checkForForwardCollision() {
     long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
     if (distanceFromObject < MinFrontDistanceFromObject) {
       log("Collision imminent: " + String(distanceFromObject) + "cm from object");
-      respond("Collision imminent: " + String(distanceFromObject) + "cm from object");
+      sendCollisionWarning(distanceFromObject);
       emergencyStop();
     }
   }
@@ -120,7 +123,7 @@ boolean hasForwardMotion() {
 void performCommand(String command) {
   char baseCommand = command[0];
   int param = command.substring(1, 4).toInt();
-  respond("Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param));
+  log("Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param));
   switch (baseCommand) {
   case EMERGENCY_STOP:
     emergencyStop();
@@ -352,8 +355,13 @@ void log(String message) {
 #endif
 }
 
-void respond(String message) {
+void sendCollisionWarning(int distanceFromObject) {
+  sendWarning(COLLISION_WARNING,String(distanceFromObject)); 
+}
+
+void sendWarning(String returnCode, String params) {
   Serial.print(START_CHAR);
-  Serial.print(message);
+  Serial.print(returnCode);
+  Serial.print(params);
   Serial.print(STOP_CHAR);
 }
