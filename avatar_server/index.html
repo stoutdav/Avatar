@@ -30,6 +30,8 @@
 </script>
 
 <script>
+    var START_CHAR = "!";
+    var STOP_CHAR = "?";
     var socket = new io.Socket("localhost", {port: 80});
     socket.connect();
     socket.on('connect', function() {
@@ -43,18 +45,19 @@
     });
 
     function sendMessageToServer(message) {
-        socket.send(message);
+        socket.send(START_CHAR + message + STOP_CHAR);
     }
 </script>
 
 <script>
     // Command constants
-    var FORWARD = 1;
-    var REVERSE = 2;
-    var RIGHT = 3;
-    var LEFT = 4;
-    var STOP = 5;
-    var EMERGENCY_STOP = 6;
+
+    var FORWARD = 'f';
+    var REVERSE = 'b';
+    var RIGHT = 'r';
+    var LEFT = 'l';
+    var STOP = 's';
+    var EMERGENCY_STOP = 'S';
 
     $(function() {
         $("#fwd").button();

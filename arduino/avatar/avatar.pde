@@ -120,7 +120,7 @@ boolean hasForwardMotion() {
 void performCommand(String command) {
   char baseCommand = command[0];
   int param = command.substring(1, 4).toInt();
-  log("Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param));
+  respond("Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param));
   switch (baseCommand) {
   case EMERGENCY_STOP:
     emergencyStop();
@@ -352,6 +352,6 @@ void log(String message) {
 #endif
 }
 
-void response(String message) {
-  Serial.println(message);
+void respond(String message) {
+  Serial.println("", START_CHAT message, String(STOP_CHAR));
 }

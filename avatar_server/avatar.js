@@ -77,7 +77,10 @@ var server = http.createServer(function (request, response) {
 			});
 	
 	sp.on('data', function (data) {
-			webClient.send("avatar says: " + data);
+            // Wait for a connection before trying to send responses
+            if (webClient) {
+                webClient.send("avatar says: " + data);
+            }
 		});
 	
 	 
