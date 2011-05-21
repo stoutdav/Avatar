@@ -50,19 +50,36 @@ const byte NotArrive = 0x00;
 
 // Configuration for motor controllers
 // According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
-const byte RampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
-const unsigned int MaximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
-const unsigned int ForwardDistance = 20;
-const unsigned int BackwardDistance = 10;
-const unsigned int RotationDistance = 5;
+const byte DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
+const unsigned int DefaultMaximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
+const unsigned int DefaultForwardDistance = 20;
+const unsigned int DefaultReverseDistance = 10;
+const unsigned int DefaultRotationDistance = 5;
 
 // Constant definitions for front sonar sensor
-const long MinFrontDistanceFromObject = 5; // in centimeters
+const long DefaultFrontCollisionDistance = 5; // in centimeters
+
+// Character Constants for parameter setting commands
+const char SET_RAMP_SPEED = 'A'; //A for acceleration
+const char SET_MAXIMUM_SPEED = 'M';
+const char SET_FORWARD_DISTANCE = 'F';
+const char SET_REVERSE_DISTANCE = 'B';
+const char SET_ROTATION_DISTANCE = 'R';
+const char SET_COLLISION_DISTANCE ='C';
 
 // Variables used for motor control
 NewSoftSerial MotorSerial(MOTOR_TX_RX_PIN, MOTOR_TX_RX_PIN);
 
+// Configurable Parameters
+byte rampSpeed;
+unsigned int maximumSpeed;
+unsigned int forwardDistance;
+unsigned int reverseDistance;
+unsigned int rotationDistance;
+long frontCollisionDistance;
+
 void setup() {
+  resetParametersToDefaults();
   setupPcInterface();
   setupMotorControl();
 }
@@ -82,11 +99,24 @@ void setupMotorControl() {
   // Reverse the left motor. Depends on how it's been wired
   setOrientationAsReversed(LeftMotor);
 
+  setMotorParameters();
+}
+
+void resetParametersToDefaults() {
+  rampSpeed = DefaultRampSpeed;
+  maximumSpeed = DefaultMaximumSpeed;
+  forwardDistance = DefaultForwardDistance;
+  reverseDistance = DefaultReverseDistance;
+  rotationDistance = DefaultRotationDistance;
+  frontCollisionDistance = DefaultFrontCollisionDistance;
+}
+
+void setMotorParameters() {
   // Set speed ramp rate (acceleration/deceleration)
-  setSpeedRampRate(BothMotors, RampSpeed);
+  setSpeedRampRate(BothMotors, rampSpeed);
 
   // Set maximum speed
-  setSpeedMaximum(BothMotors, MaximumSpeed);
+  setSpeedMaximum(BothMotors, maximumSpeed);
 }
 
 void loop() {
@@ -108,7 +138,7 @@ void checkForForwardCollision() {
   // Assumption: Since QPOS has a signed return value this will work.
   if (hasForwardMotion()) {
     long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
-    if (distanceFromObject < MinFrontDistanceFromObject) {
+    if (distanceFromObject < frontCollisionDistance) {
       log("Collision imminent: " + String(distanceFromObject) + "cm from object");
       sendCollisionWarning(distanceFromObject);
       emergencyStop();
@@ -132,16 +162,16 @@ void performCommand(String command) {
     smoothStop();
     break;
   case FORWARD:
-    travelNumberOfPositions(BothMotors, -1 * ForwardDistance);
+    travelNumberOfPositions(BothMotors, -1 * forwardDistance);
     break;
   case BACKWARD:
-    travelNumberOfPositions(BothMotors, 1 * BackwardDistance);
+    travelNumberOfPositions(BothMotors, 1 * reverseDistance);
     break;
   case LEFT:
-    rotate(1 * RotationDistance);
+    rotate(1 * rotationDistance);
     break;
   case RIGHT:
-    rotate(-1 * RotationDistance);
+    rotate(-1 * rotationDistance);
     break;
   }
 }
@@ -365,3 +395,8 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
+
+
+
+
+
