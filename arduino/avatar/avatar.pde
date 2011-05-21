@@ -99,7 +99,11 @@ void setupMotorControl() {
   // Reverse the left motor. Depends on how it's been wired
   setOrientationAsReversed(LeftMotor);
 
-  setMotorParameters();
+  // Set speed ramp rate (acceleration/deceleration)
+  setSpeedRampRate();
+
+  // Set maximum speed
+  setSpeedMaximum();
 }
 
 void resetParametersToDefaults() {
@@ -111,11 +115,38 @@ void resetParametersToDefaults() {
   frontCollisionDistance = DefaultFrontCollisionDistance;
 }
 
-void setMotorParameters() {
+void setRampSpeed(byte param) {
+  rampSpeed = param;
+  setSpeedRampRate();
+};
+
+void setMaximumSpeed(unsigned int param) {
+  maximumSpeed = param;
+  setSpeedMaximum();
+};
+
+void setForwardDistance(unsigned int param) {
+  forwardDistance = param;
+};
+
+void setReverseDistance(unsigned int param) {
+  reverseDistance = param;
+};
+
+void setRotationDistance(unsigned int param) {
+  rotationDistance = param;
+};
+
+void setCollisionDistance(long param) {
+  frontCollisionDistance = param;
+};
+
+void setSpeedRampRate() {
   // Set speed ramp rate (acceleration/deceleration)
   setSpeedRampRate(BothMotors, rampSpeed);
+}
 
-  // Set maximum speed
+void setSpeedMaximum() {
   setSpeedMaximum(BothMotors, maximumSpeed);
 }
 
@@ -172,6 +203,24 @@ void performCommand(String command) {
     break;
   case RIGHT:
     rotate(-1 * rotationDistance);
+    break;
+  case SET_RAMP_SPEED:
+    setRampSpeed(param);
+    break;
+  case SET_MAXIMUM_SPEED:
+    setMaximumSpeed(param);
+    break;
+  case SET_FORWARD_DISTANCE:
+    setForwardDistance(param);
+    break;
+  case SET_REVERSE_DISTANCE:
+    setReverseDistance(param);
+    break;
+  case SET_ROTATION_DISTANCE:
+    setRotationDistance(param);
+    break;
+  case SET_COLLISION_DISTANCE:
+    setCollisionDistance(param);
     break;
   }
 }
@@ -395,6 +444,8 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
+
+
 
 
 
