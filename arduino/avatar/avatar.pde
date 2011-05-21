@@ -51,7 +51,7 @@ const byte NotArrive = 0x00;
 // Configuration for motor controllers
 // According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
 const byte DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default
-const unsigned int DefaultMaximumSpeed = 2; // 2 positions per .5 second. 36 is the default;
+const unsigned int DefaultMaximumSpeed = 36; // 2 positions per .5 second. 36 is the default;
 const unsigned int DefaultForwardDistance = 20;
 const unsigned int DefaultReverseDistance = 10;
 const unsigned int DefaultRotationDistance = 5;
@@ -116,11 +116,13 @@ void resetParametersToDefaults() {
 }
 
 void setRampSpeed(byte param) {
+  //TODO: Should only be modifiable when stopped
   rampSpeed = param;
   setSpeedRampRate();
 };
 
 void setMaximumSpeed(unsigned int param) {
+  //TODO: should not be modifiable in mid-travel
   maximumSpeed = param;
   setSpeedMaximum();
 };
