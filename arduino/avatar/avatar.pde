@@ -7,7 +7,7 @@
 #include <NewSoftSerial.h>
 
 // Uncomment this for debugging output
-//#define AVATAR_DEBUG
+boolean debug = false;
 
 // Pin definitions for motors
 #define MOTOR_TX_RX_PIN 3
@@ -21,6 +21,7 @@ const char STOP_CHAR = '?';
 
 // Character constants for return codes
 const char COLLISION_WARNING = 'C'; // takes 3 chars representing distance in cms
+const char DEBUG_MESSAGE = '#'; // takes 3 chars representing distance in cms
 
 // Character constants for directional commands
 const char FORWARD = 'f';
@@ -66,6 +67,10 @@ const char SET_FORWARD_DISTANCE = 'F';
 const char SET_REVERSE_DISTANCE = 'B';
 const char SET_ROTATION_DISTANCE = 'R';
 const char SET_COLLISION_DISTANCE ='C';
+
+// Character constants for system commands
+const char TOGGLE_DEBUG = 'D';
+const char RESET = 'T';
 
 // Variables used for motor control
 NewSoftSerial MotorSerial(MOTOR_TX_RX_PIN, MOTOR_TX_RX_PIN);
@@ -152,6 +157,10 @@ void setSpeedMaximum() {
   setSpeedMaximum(BothMotors, maximumSpeed);
 }
 
+void toggleDebug() {
+  debug = !debug;
+}
+
 void loop() {
   checkForForwardCollision();
   if (Serial.available()) {
@@ -223,6 +232,12 @@ void performCommand(String command) {
     break;
   case SET_COLLISION_DISTANCE:
     setCollisionDistance(param);
+    break;
+  case TOGGLE_DEBUG:
+    toggleDebug();
+    break;
+  case RESET:
+    resetParametersToDefaults();
     break;
   }
 }
@@ -431,9 +446,10 @@ void setPinToRx(int pin) {
 }
 
 void log(String message) {
-#ifdef AVATAR_DEBUG
-  Serial.println("#DEBUG", message);
-#endif
+  if(debug) {
+    Serial.print(DEBUG_MESSAGE);
+    Serial.print(message);
+  }
 }
 
 void sendCollisionWarning(int distanceFromObject) {
@@ -446,10 +462,4 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
-
-
-
-
-
-
 
