@@ -23,8 +23,12 @@
                     resizable: false,
                     north__size: 100,
                     north__resizable: true,
-                    south__size: 100,
-                    south__resizable: true
+                    south__size: 200,
+                    south__resizable: true,
+                    east__size: 200,
+                    east__resizable: false,
+                    center_minHeight: 600
+
                 });
     });
 </script>
@@ -108,7 +112,7 @@
     var SET_COLLISION_DISTANCE = 'C';
 
     // System constants. Must match constants in arduino avatar.pde file
-    var TOGGLE_DEBUG = 'D';
+    var SET_DEBUG = 'D';
     var RESET = 'T';
 
     $(function() {
@@ -142,14 +146,15 @@
             sendMessageToServer(EMERGENCY_STOP)
         });
 
-        $("#debug").button();
-        $("#debug").click(function() {
-            sendMessageToServer(DEBUG)
+        $("#debug").buttonset();
+        $("#debug").change(function() {
+            var checkedValue = $("input[@name=debug]:checked").val();
+            sendMessageToServer(SET_DEBUG + checkedValue);
         });
 
         $("#reset").button();
         $("#reset").click(function() {
-            sendMessageToServer(TOGGLE_DEBUG)
+            sendMessageToServer(RESET)
         });
 
         // The default values for each slider should match what's in the arduino avatar.pde file
@@ -317,12 +322,18 @@
 </div>
 
 <div class="ui-layout-north">
-    Avatar messages
+    <textarea id="messages" class="messages"></textarea>
+
 </div>
 
 <div class="ui-layout-south">
-    <input type="checkbox" id="debug"/><label for="debug">Debug</label>
-    Debug output
+     <div id="debug">
+        Debug output:
+		<input type="radio" id="debugOn" value="1" name="debug" /><label for="debugOn">On</label>
+		<input type="radio" id="debugOff" value="0" name="debug" checked="checked" /><label for="debugOff">Off</label>
+	</div>
+    <textarea id="debugOutput" class="debugOutput"></textarea>
+
 </div>
 
 <!--<div class="ui-layout-west">-->

@@ -69,7 +69,7 @@ const char SET_ROTATION_DISTANCE = 'R';
 const char SET_COLLISION_DISTANCE ='C';
 
 // Character constants for system commands
-const char TOGGLE_DEBUG = 'D';
+const char SET_DEBUG = 'D';
 const char RESET = 'T';
 
 // Variables used for motor control
@@ -157,8 +157,12 @@ void setSpeedMaximum() {
   setSpeedMaximum(BothMotors, maximumSpeed);
 }
 
-void toggleDebug() {
-  debug = !debug;
+void setDebug(int param) {
+  if (param) {
+    debug = true;
+  } else {
+    debug = false;
+  }
 }
 
 void loop() {
@@ -233,8 +237,8 @@ void performCommand(String command) {
   case SET_COLLISION_DISTANCE:
     setCollisionDistance(param);
     break;
-  case TOGGLE_DEBUG:
-    toggleDebug();
+  case SET_DEBUG:
+    setDebug();
     break;
   case RESET:
     resetParametersToDefaults();
