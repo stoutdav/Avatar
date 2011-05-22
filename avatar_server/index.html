@@ -11,7 +11,6 @@
 </head>
 <body>
 
-
 <div class="container">
     <!--Row 1-->
     <div class="span-24">
@@ -122,49 +121,92 @@
 
 <script type="text/javascript">
     //Constants
-    var COLLISION_WARNING = "C";
+    var COLLISION_WARNING = "W";
     var DEBUG_MESSAGE = "#";
 
     // Receiving messages
-    var messageFromServer = "";
-    var inMessage = false;
+    var messageBuffer = [];
     var socket = new io.Socket("localhost", {port: 80});
     socket.connect();
     socket.on('connect', function() {
         console.log("Client: Client connected to server");
     });
     socket.on('message', function(data) {
-
         // Need to build message because it comes back in chunks
-        if (data.charAt(0) == START_CHAR && data.charAt(data.length - 1) == STOP_CHAR) {
-            logMessageReceivedFromServer(data.substring(1, data.length - 1));
-            return;
+        for (var eachChar in data) {
+            messageBuffer.push(data[eachChar]);
         }
-
-        if (data.charAt(0) == START_CHAR) {
-            inMessage = true;
-            messageFromServer = data.substring(1, data.length - 1);
-            return;
-        }
-
-        if (data.charAt(data.length - 1) == STOP_CHAR && inMessage) {
-            messageFromServer = messageFromServer.concat(data.substring(0, data.length - 1));
-            logMessageReceivedFromServer(messageFromServer);
-            messageFromServer = "";
-            inMessage = false;
-        }
+        processMessages();
     });
+
+    function processMessages() {
+
+        var indexOfStartChar = messageBuffer.indexOf(START_CHAR);
+        var indexOfStopChar = messageBuffer.indexOf(STOP_CHAR);
+
+        while (indexOfStartChar != -1 && indexOfStopChar != -1) {
+            var message = [];
+            for (var eachChar in messageBuffer) {
+                var nextChar = messageBuffer.shift();
+                if (nextChar == STOP_CHAR) {
+                    break;
+                }
+                if (nextChar == START_CHAR) {
+                    continue;
+                }
+                message.push(nextChar);
+            }
+            handleMessageFromServer(message);
+            message = [];
+            indexOfStartChar = messageBuffer.indexOf(START_CHAR);
+            indexOfStopChar = messageBuffer.indexOf(STOP_CHAR);
+        }
+    }
 
     socket.on('disconnect', function() {
         console.log("Client: Client disconnected from server");
     });
 
-    function logMessageReceivedFromServer(code) {
+    function handleMessageFromServer(code) {
         var message;
-        var messageType = code.charAt(0);
+        var messageType = code[0];
+        var param = (code.splice(1, code.length - 1)).join("");
         switch (messageType) {
             case COLLISION_WARNING:
-                message = "Collision warning. Front sensor is " + code.substr(1, code.length - 1) + " cm from object.";
+                message = "Collision warning. Front sensor is " + param + " cm from object.";
+                break;
+            case DEBUG_MESSAGE:
+                // Write it to debug out
+                break;
+            case RAMP_SPEED:
+                $("#rampSpeedSlider").slider("value", param);
+                $("#rampSpeed").val(param);
+                message = "Set ramp speed to " + param;
+                break;
+            case MAXIMUM_SPEEP:
+                $("#maxSpeedSlider").slider("value", param);
+                $("#maxSpeed").val(param);
+                message = "Set maximum speed to " + param;
+                break;
+            case FORWARD_DISTANCE:
+                $("#forwardDistanceSlider").slider("value", param);
+                $("#forwardDistance").val(param);
+                message = "Set forward distance to " + param;
+                break;
+            case REVERSE_DISTANCE:
+                $("#reverseDistanceSlider").slider("value", param);
+                $("#reverseDistance").val(param);
+                message = "Set reverse distance to " + param;
+                break;
+            case ROTATION_DISTANCE:
+                $("#rotationDistanceSlider").slider("value", param);
+                $("#rotationDistanceSlider").val(param);
+                message = "Set rotation distance to " + param;
+                break;
+            case COLLISION_DISTANCE:
+                $("#frontSensorSlider").slider("value", param);
+                $("#frontSensor").val(param);
+                message = "Set front sensor distance to " + param;
                 break;
             default:
                 message = "Unknown Message"
@@ -184,13 +226,15 @@
     var STOP = 's';
     var EMERGENCY_STOP = 'S';
 
-    // Parameter constants. Must match constants in arduino avatar.pde file
-    var SET_RAMP_SPEED = 'A'; //A for acceleration
-    var SET_MAXIMUM_SPEED = 'M';
-    var SET_FORWARD_DISTANCE = 'F';
-    var SET_REVERSE_DISTANCE = 'B';
-    var SET_ROTATION_DISTANCE = 'R';
-    var SET_COLLISION_DISTANCE = 'C';
+    // Parameter constants. Must match constants in arduino avatar.pde file. Also used when setting a param in GUI
+    var RAMP_SPEED = 'A'; //A for acceleration
+    var MAXIMUM_SPEEP = 'M';
+    var FORWARD_DISTANCE = 'F';
+    var REVERSE_DISTANCE = 'B';
+    var ROTATION_DISTANCE = 'R';
+    var COLLISION_DISTANCE = 'C';
+
+    var READ_PARAM = 'P'; // Used when requesting a parameter value
 
     // System constants. Must match constants in arduino avatar.pde file
     var SET_DEBUG = 'D';
@@ -249,7 +293,7 @@
                             $("#rampSpeed").val(ui.value);
                         },
                         change: function(event, ui) {
-                            sendMessageToServer(SET_RAMP_SPEED + ui.value);
+                            sendMessageToServer(RAMP_SPEED + ui.value);
                         }
                     });
             $("#rampSpeed").val($("#rampSpeedSlider").slider("value"));
@@ -265,7 +309,7 @@
                             $("#maxSpeed").val(ui.value);
                         },
                         change: function(event, ui) {
-                            sendMessageToServer(SET_MAXIMUM_SPEED + ui.value);
+                            sendMessageToServer(MAXIMUM_SPEEP + ui.value);
                         }
                     });
             $("#maxSpeed").val($("#maxSpeedSlider").slider("value"));
@@ -281,7 +325,7 @@
                             $("#forwardDistance").val(ui.value);
                         },
                         change: function(event, ui) {
-                            sendMessageToServer(SET_FORWARD_DISTANCE + ui.value);
+                            sendMessageToServer(FORWARD_DISTANCE + ui.value);
                         }
                     });
             $("#forwardDistance").val($("#forwardDistanceSlider").slider("value"));
@@ -297,7 +341,7 @@
                             $("#reverseDistance").val(ui.value);
                         },
                         change: function(event, ui) {
-                            sendMessageToServer(SET_REVERSE_DISTANCE + ui.value);
+                            sendMessageToServer(REVERSE_DISTANCE + ui.value);
                         }
                     });
             $("#reverseDistance").val($("#reverseDistanceSlider").slider("value"));
@@ -313,7 +357,7 @@
                             $("#rotationDistance").val(ui.value);
                         },
                         change: function(event, ui) {
-                            sendMessageToServer(SET_ROTATION_DISTANCE + ui.value);
+                            sendMessageToServer(ROTATION_DISTANCE + ui.value);
                         }
                     });
             $("#rotationDistance").val($("#rotationDistanceSlider").slider("value"));
@@ -329,7 +373,7 @@
                             $("#frontSensor").val(ui.value);
                         },
                         change: function(event, ui) {
-                            sendMessageToServer(SET_COLLISION_DISTANCE + ui.value);
+                            sendMessageToServer(COLLISION_DISTANCE + ui.value);
                         }
                     });
             $("#frontSensor").val($("#frontSensorSlider").slider("value"));

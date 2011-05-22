@@ -20,7 +20,7 @@ const char START_CHAR = '!';
 const char STOP_CHAR = '?';
 
 // Character constants for return codes
-const char COLLISION_WARNING = 'C'; // takes 3 chars representing distance in cms
+const char COLLISION_WARNING = 'W'; // takes 3 chars representing distance in cms
 const char DEBUG_MESSAGE = '#'; // takes 3 chars representing distance in cms
 
 // Character constants for directional commands
@@ -58,15 +58,17 @@ const unsigned int DefaultReverseDistance = 10;
 const unsigned int DefaultRotationDistance = 5;
 
 // Constant definitions for front sonar sensor
-const long DefaultFrontCollisionDistance = 5; // in centimeters
+const int DefaultFrontCollisionDistance = 5; // in centimeters
 
-// Character Constants for parameter setting commands
-const char SET_RAMP_SPEED = 'A'; //A for acceleration
-const char SET_MAXIMUM_SPEED = 'M';
-const char SET_FORWARD_DISTANCE = 'F';
-const char SET_REVERSE_DISTANCE = 'B';
-const char SET_ROTATION_DISTANCE = 'R';
-const char SET_COLLISION_DISTANCE ='C';
+// Character Constants for parameter setting commands and params for reading commands
+const char RAMP_SPEED = 'A'; //A for acceleration
+const char MAXIMUM_SPEED = 'M';
+const char FORWARD_DISTANCE = 'F';
+const char REVERSE_DISTANCE = 'B';
+const char ROTATION_DISTANCE = 'R';
+const char COLLISION_DISTANCE ='C';
+
+const char READ_PARAM = 'P';
 
 // Character constants for system commands
 const char SET_DEBUG = 'D';
@@ -81,7 +83,7 @@ unsigned int maximumSpeed;
 unsigned int forwardDistance;
 unsigned int reverseDistance;
 unsigned int rotationDistance;
-long frontCollisionDistance;
+int frontCollisionDistance;
 
 void setup() {
   resetParametersToDefaults();
@@ -118,6 +120,7 @@ void resetParametersToDefaults() {
   reverseDistance = DefaultReverseDistance;
   rotationDistance = DefaultRotationDistance;
   frontCollisionDistance = DefaultFrontCollisionDistance;
+
 }
 
 void setRampSpeed(byte param) {
@@ -160,8 +163,32 @@ void setSpeedMaximum() {
 void setDebug(int param) {
   if (param) {
     debug = true;
-  } else {
+  } 
+  else {
     debug = false;
+  }
+}
+
+void readParameter(char param) {
+  switch(param) {
+  case RAMP_SPEED:
+    sendParam(RAMP_SPEED, rampSpeed);
+    break;
+  case MAXIMUM_SPEED:
+    sendParam(MAXIMUM_SPEED, maximumSpeed);
+    break;
+  case FORWARD_DISTANCE:
+    sendParam(FORWARD_DISTANCE, forwardDistance);
+    break;
+  case REVERSE_DISTANCE:
+    sendParam(REVERSE_DISTANCE, reverseDistance);
+    break;
+  case ROTATION_DISTANCE:
+    sendParam(ROTATION_DISTANCE, rotationDistance);
+    break;
+  case COLLISION_DISTANCE:
+    sendParam(COLLISION_DISTANCE, frontCollisionDistance);
+    break;
   }
 }
 
@@ -219,35 +246,39 @@ void performCommand(String command) {
   case RIGHT:
     rotate(-1 * rotationDistance);
     break;
-  case SET_RAMP_SPEED:
+  case RAMP_SPEED:
     setRampSpeed(param);
     break;
-  case SET_MAXIMUM_SPEED:
+  case MAXIMUM_SPEED:
     setMaximumSpeed(param);
     break;
-  case SET_FORWARD_DISTANCE:
+  case FORWARD_DISTANCE:
     setForwardDistance(param);
     break;
-  case SET_REVERSE_DISTANCE:
+  case REVERSE_DISTANCE:
     setReverseDistance(param);
     break;
-  case SET_ROTATION_DISTANCE:
+  case ROTATION_DISTANCE:
     setRotationDistance(param);
     break;
-  case SET_COLLISION_DISTANCE:
+  case COLLISION_DISTANCE:
     setCollisionDistance(param);
     break;
   case SET_DEBUG:
-    setDebug();
+    setDebug(param);
     break;
   case RESET:
     resetParametersToDefaults();
+    sendAllParams();  
+    break;
+  case READ_PARAM:
+    readParameter(param);
     break;
   }
 }
 
 String getSerialInput() {
-  char command[4]; // 4 char commands + string end 
+  char command[4]; // 4 char commands + string end
   delay(100);
   char val = Serial.read();
   if (val == START_CHAR) {
@@ -451,13 +482,15 @@ void setPinToRx(int pin) {
 
 void log(String message) {
   if(debug) {
+    Serial.print(START_CHAR);
     Serial.print(DEBUG_MESSAGE);
     Serial.print(message);
+    Serial.print(STOP_CHAR);
   }
 }
 
 void sendCollisionWarning(int distanceFromObject) {
-  sendWarning(COLLISION_WARNING,String(distanceFromObject)); 
+//  sendWarning(COLLISION_WARNING, String(distanceFromObject));
 }
 
 void sendWarning(String returnCode, String params) {
@@ -466,4 +499,24 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
+
+void sendAllParams() {
+  sendParam(RAMP_SPEED, rampSpeed);
+  sendParam(MAXIMUM_SPEED, maximumSpeed);
+  sendParam(FORWARD_DISTANCE, forwardDistance);
+  sendParam(REVERSE_DISTANCE, reverseDistance);
+  sendParam(ROTATION_DISTANCE, rotationDistance);
+  sendParam(COLLISION_DISTANCE, frontCollisionDistance);
+}
+
+void sendParam(char param, int value) {
+  Serial.print(START_CHAR);
+  Serial.print(param);
+  Serial.print(String(value));
+  Serial.print(STOP_CHAR);
+}
+
+
+
+
 
