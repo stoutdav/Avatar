@@ -31,6 +31,22 @@ const char RIGHT = 'r';
 const char EMERGENCY_STOP = 'S';
 const char SMOOTH_STOP = 's';
 
+// Character Constants for parameter setting commands and params for reading commands
+const char RAMP_SPEED = 'A'; //A for acceleration
+const char MAXIMUM_SPEED = 'M';
+const char FORWARD_DISTANCE = 'F';
+const char REVERSE_DISTANCE = 'B';
+const char ROTATION_DISTANCE = 'R';
+const char COLLISION_DISTANCE ='C';
+
+const char READ_PARAM = 'P';  // needs to be followed by param constant from list
+const char READ_ALL_PARAMS = 'Y';
+
+// Character constants for system commands
+const char SET_DEBUG = 'D';
+const char RESET = 'T';
+
+
 // Constant definitions for Motor/Position Controllers:
 // http://www.parallax.com/Portals/0/Downloads/docs/prod/motors/27906-PositionClrKit-v1.1.pdf
 // See: http://www.ieee.org/netstorage/spectrum/articles/oct10/DaveBot_Arduino_Sketch.txt for much of the inspiration
@@ -59,20 +75,6 @@ const unsigned int DefaultRotationDistance = 5;
 
 // Constant definitions for front sonar sensor
 const int DefaultFrontCollisionDistance = 5; // in centimeters
-
-// Character Constants for parameter setting commands and params for reading commands
-const char RAMP_SPEED = 'A'; //A for acceleration
-const char MAXIMUM_SPEED = 'M';
-const char FORWARD_DISTANCE = 'F';
-const char REVERSE_DISTANCE = 'B';
-const char ROTATION_DISTANCE = 'R';
-const char COLLISION_DISTANCE ='C';
-
-const char READ_PARAM = 'P';
-
-// Character constants for system commands
-const char SET_DEBUG = 'D';
-const char RESET = 'T';
 
 // Variables used for motor control
 NewSoftSerial MotorSerial(MOTOR_TX_RX_PIN, MOTOR_TX_RX_PIN);
@@ -111,16 +113,6 @@ void setupMotorControl() {
 
   // Set maximum speed
   setSpeedMaximum();
-}
-
-void resetParametersToDefaults() {
-  rampSpeed = DefaultRampSpeed;
-  maximumSpeed = DefaultMaximumSpeed;
-  forwardDistance = DefaultForwardDistance;
-  reverseDistance = DefaultReverseDistance;
-  rotationDistance = DefaultRotationDistance;
-  frontCollisionDistance = DefaultFrontCollisionDistance;
-
 }
 
 void setRampSpeed(byte param) {
@@ -169,7 +161,7 @@ void setDebug(int param) {
   }
 }
 
-void readParameter(char param) {
+void sendParam(char param) {
   switch(param) {
   case RAMP_SPEED:
     sendParam(RAMP_SPEED, rampSpeed);
@@ -268,11 +260,15 @@ void performCommand(String command) {
     setDebug(param);
     break;
   case RESET:
+    softReset();
     resetParametersToDefaults();
-    sendAllParams();  
+    sendAllParams();
     break;
   case READ_PARAM:
-    readParameter(param);
+    sendParam(param);
+    break;
+  case READ_ALL_PARAMS:
+    sendAllParams();
     break;
   }
 }
@@ -498,6 +494,21 @@ void sendWarning(String returnCode, String params) {
   Serial.print(returnCode);
   Serial.print(params);
   Serial.print(STOP_CHAR);
+}
+
+void softReset() {
+  clearPosition(BothMotors);
+  clearPosition(BothMotors);
+  clearPosition(BothMotors);
+}
+
+void resetParametersToDefaults() {
+  rampSpeed = DefaultRampSpeed;
+  maximumSpeed = DefaultMaximumSpeed;
+  forwardDistance = DefaultForwardDistance;
+  reverseDistance = DefaultReverseDistance;
+  rotationDistance = DefaultRotationDistance;
+  frontCollisionDistance = DefaultFrontCollisionDistance;
 }
 
 void sendAllParams() {

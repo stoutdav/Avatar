@@ -123,6 +123,7 @@ var ROTATION_DISTANCE = 'R';
 var COLLISION_DISTANCE = 'C';
 
 var READ_PARAM = 'P'; // Used when requesting a parameter value
+var READ_ALL_PARAMS = 'Y';  // Used when requesting all parameter values
 
 // System constants. Must match constants in arduino avatar.pde file
 var SET_DEBUG = 'D';
@@ -266,6 +267,10 @@ $(function() {
                 });
         $("#frontSensor").val($("#frontSensorSlider").slider("value"));
     });
+
+    // Once gui is setup get actual values from arduino
+    sendMessageToServer(READ_ALL_PARAMS);
+
 });
 
 function sendMessageToServer(message) {
