@@ -490,7 +490,7 @@ void log(String message) {
 }
 
 void sendCollisionWarning(int distanceFromObject) {
-//  sendWarning(COLLISION_WARNING, String(distanceFromObject));
+  sendWarning(COLLISION_WARNING, String(distanceFromObject));
 }
 
 void sendWarning(String returnCode, String params) {

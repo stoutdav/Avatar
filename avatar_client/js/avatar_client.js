@@ -15,33 +15,38 @@ socket.on('connect', function() {
 });
 socket.on('message', function(data) {
     // Need to build message because it comes back in chunks
-    for (var eachChar in data) {
-        messageBuffer.push(data[eachChar]);
+    for (var i = 0; i < data.length; i++) {
+        messageBuffer.push(data[i]);
     }
     processMessages();
 });
 
 function processMessages() {
-
     var indexOfStartChar = messageBuffer.indexOf(START_CHAR);
     var indexOfStopChar = messageBuffer.indexOf(STOP_CHAR);
 
     while (indexOfStartChar != -1 && indexOfStopChar != -1) {
-        var message = [];
-        for (var eachChar in messageBuffer) {
-            var nextChar = messageBuffer.shift();
-            if (nextChar == STOP_CHAR) {
-                break;
-            }
-            if (nextChar == START_CHAR) {
-                continue;
-            }
-            message.push(nextChar);
-        }
+        var message = getNextMessageFromBuffer();
         handleMessageFromServer(message);
         indexOfStartChar = messageBuffer.indexOf(START_CHAR);
         indexOfStopChar = messageBuffer.indexOf(STOP_CHAR);
     }
+}
+
+function getNextMessageFromBuffer() {
+    var message = [];
+    var length = messageBuffer.length;
+    for (var i = 0; i < length; i++) {
+        var nextChar = messageBuffer.shift();
+        if (nextChar == STOP_CHAR) {
+            break;
+        }
+        if (nextChar == START_CHAR) {
+            continue;
+        }
+        message.push(nextChar);
+    }
+    return message;
 }
 
 socket.on('disconnect', function() {
@@ -55,9 +60,13 @@ function handleMessageFromServer(code) {
     switch (messageType) {
         case COLLISION_WARNING:
             message = "Collision warning. Front sensor is " + param + " cm from object.";
+            $("#messages").append(message);
+            $("#messages").append("<br>");
             break;
         case DEBUG_MESSAGE:
-            // Write it to debug out
+            $("#debugOutput").append(param);
+            $("#debugOutput").append("<br>");
+            message = param;
             break;
         case RAMP_SPEED:
             $("#rampSpeedSlider").slider("value", param);
@@ -81,7 +90,7 @@ function handleMessageFromServer(code) {
             break;
         case ROTATION_DISTANCE:
             $("#rotationDistanceSlider").slider("value", param);
-            $("#rotationDistanceSlider").val(param);
+            $("#rotationDistance").val(param);
             message = "Set rotation distance to " + param;
             break;
         case COLLISION_DISTANCE:
@@ -171,7 +180,7 @@ $(function() {
                     slide: function(event, ui) {
                         $("#rampSpeed").val(ui.value);
                     },
-                    change: function(event, ui) {
+                    stop: function(event, ui) {
                         sendMessageToServer(RAMP_SPEED + ui.value);
                     }
                 });
@@ -187,7 +196,7 @@ $(function() {
                     slide: function(event, ui) {
                         $("#maxSpeed").val(ui.value);
                     },
-                    change: function(event, ui) {
+                    stop: function(event, ui) {
                         sendMessageToServer(MAXIMUM_SPEEP + ui.value);
                     }
                 });
@@ -203,7 +212,7 @@ $(function() {
                     slide: function(event, ui) {
                         $("#forwardDistance").val(ui.value);
                     },
-                    change: function(event, ui) {
+                    stop: function(event, ui) {
                         sendMessageToServer(FORWARD_DISTANCE + ui.value);
                     }
                 });
@@ -219,7 +228,7 @@ $(function() {
                     slide: function(event, ui) {
                         $("#reverseDistance").val(ui.value);
                     },
-                    change: function(event, ui) {
+                    stop: function(event, ui) {
                         sendMessageToServer(REVERSE_DISTANCE + ui.value);
                     }
                 });
@@ -235,7 +244,7 @@ $(function() {
                     slide: function(event, ui) {
                         $("#rotationDistance").val(ui.value);
                     },
-                    change: function(event, ui) {
+                    stop: function(event, ui) {
                         sendMessageToServer(ROTATION_DISTANCE + ui.value);
                     }
                 });
@@ -251,7 +260,7 @@ $(function() {
                     slide: function(event, ui) {
                         $("#frontSensor").val(ui.value);
                     },
-                    change: function(event, ui) {
+                    stop: function(event, ui) {
                         sendMessageToServer(COLLISION_DISTANCE + ui.value);
                     }
                 });

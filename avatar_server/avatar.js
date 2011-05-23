@@ -80,7 +80,7 @@ var server = http.createServer(function (request, response) {
             // Wait for a connection before trying to send responses
             if (webClient) {
                 var message = new String(data);
-                console.log("Server: Client sending a message: " +  message);
+                console.log("Server: Sending a message: " +  message);
                 webClient.send(message);
             }
 		});
