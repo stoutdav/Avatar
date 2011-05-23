@@ -60,12 +60,12 @@ function handleMessageFromServer(code) {
     switch (messageType) {
         case COLLISION_WARNING:
             message = "Collision warning. Front sensor is " + param + " cm from object.";
-            $("#messages").append(message);
-            $("#messages").append("<br>");
+            $("#messages").prepend("<br>");
+            $("#messages").prepend(message);
             break;
         case DEBUG_MESSAGE:
-            $("#debugOutput").append(param);
-            $("#debugOutput").append("<br>");
+            $("#debugOutput").prepend("<br>");
+            $("#debugOutput").prepend(param);
             message = param;
             break;
         case RAMP_SPEED:
