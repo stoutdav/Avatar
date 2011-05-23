@@ -116,13 +116,13 @@ void setupMotorControl() {
 }
 
 void setRampSpeed(byte param) {
-  //TODO: Should only be modifiable when stopped
+  smoothStop();
   rampSpeed = param;
   setSpeedRampRate();
 };
 
 void setMaximumSpeed(unsigned int param) {
-  //TODO: should not be modifiable in mid-travel
+  smoothStop();
   maximumSpeed = param;
   setSpeedMaximum();
 };
