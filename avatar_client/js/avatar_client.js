@@ -272,3 +272,23 @@ function sendMessageToServer(message) {
     socket.send(START_CHAR + message + STOP_CHAR);
 }
 
+// Hotkeys
+$(document).bind("keydown","up" ,function() {
+    sendMessageToServer(FORWARD);
+} );
+$(document).bind("keydown","down" ,function() {
+    sendMessageToServer(REVERSE);
+} );
+$(document).bind("keydown","left" ,function() {
+    sendMessageToServer(LEFT);
+} );
+$(document).bind("keydown","right" ,function() {
+    sendMessageToServer(FORWARD);
+} );
+$(document).bind("keydown","space" ,function() {
+    sendMessageToServer(STOP);
+} );
+$(document).bind("keydown","return" ,function() {
+    sendMessageToServer(EMERGENCY_STOP);
+} );
+
