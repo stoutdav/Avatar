@@ -8,7 +8,7 @@ var DEBUG_MESSAGE = "#";
 
 // Receiving messages
 var messageBuffer = [];
-var socket = new io.Socket("192.168.0.117", {port: 80});
+var socket = new io.Socket();
 socket.connect();
 socket.on('connect', function() {
     console.log("Client: Client connected to server");
@@ -278,22 +278,22 @@ function sendMessageToServer(message) {
 }
 
 // Hotkeys
-$(document).bind("keydown","up" ,function() {
+$(document).bind("keydown", "up", function() {
     sendMessageToServer(FORWARD);
-} );
-$(document).bind("keydown","down" ,function() {
+});
+$(document).bind("keydown", "down", function() {
     sendMessageToServer(REVERSE);
-} );
-$(document).bind("keydown","left" ,function() {
+});
+$(document).bind("keydown", "left", function() {
     sendMessageToServer(LEFT);
-} );
-$(document).bind("keydown","right" ,function() {
+});
+$(document).bind("keydown", "right", function() {
     sendMessageToServer(FORWARD);
-} );
-$(document).bind("keydown","space" ,function() {
+});
+$(document).bind("keydown", "space", function() {
     sendMessageToServer(STOP);
-} );
-$(document).bind("keydown","return" ,function() {
+});
+$(document).bind("keydown", "return", function() {
     sendMessageToServer(EMERGENCY_STOP);
-} );
+});
 
