@@ -8,7 +8,7 @@ var DEBUG_MESSAGE = "#";
 
 // Receiving messages
 var messageBuffer = [];
-var socket = new io.Socket("localhost", {port: 80});
+var socket = new io.Socket("192.168.0.117", {port: 80});
 socket.connect();
 socket.on('connect', function() {
     console.log("Client: Client connected to server");

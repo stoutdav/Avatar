@@ -7,7 +7,7 @@ var server = http.createServer(function (request, response) {
 	console.log("Request for file", filePath);
 			
 	if (filePath == "../avatar_client/")
-		filePath = "../avatar_client/index.html"
+		filePath = "../avatar_client/index.html";
 					
 	var fileExtension = path.extname(filePath);
 	var contentType = "text/html";
@@ -55,7 +55,7 @@ var server = http.createServer(function (request, response) {
 		response.end();
 	};
 	
-	server.listen(80, "127.0.0.1");
+	server.listen(80);
 	
 	var socket = io.listen(server);
 	var webClient;
