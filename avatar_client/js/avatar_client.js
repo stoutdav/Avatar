@@ -288,7 +288,7 @@ $(document).bind("keydown", "left", function() {
     sendMessageToServer(LEFT);
 });
 $(document).bind("keydown", "right", function() {
-    sendMessageToServer(FORWARD);
+    sendMessageToServer(RIGHT);
 });
 $(document).bind("keydown", "space", function() {
     sendMessageToServer(STOP);
