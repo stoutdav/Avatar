@@ -26,11 +26,6 @@ var RESET = 'T';
 var READ_PARAM = 'P'; // Used when requesting a parameter value
 var READ_ALL_PARAMS = 'Y';  // Used when requesting all parameter values
 
-// System constants. Must match constants in arduino avatar.pde file
-var SET_TRAVEL_MODE = 'Z';
-var CONTINUOUS_TRAVEL = '0'; // Travels continuously until stop command is receive
-var INCREMENTAL_TRAVEL = '1'; // Moves f/b/l/r based on the set distances
-
 var SET_DEBUG = 'D';
 var DEBUG_OFF = '0';
 var DEBUG_ON = '1';
@@ -127,11 +122,6 @@ function handleMessageFromServer(code) {
             $("#frontSensor").val(param);
             message = "Set front sensor distance to " + param;
             break;
-        case SET_TRAVEL_MODE:
-            $("input[name=travelMode][value=" + param + "]").attr("checked", true);
-            $("#travelMode").buttonset("refresh");
-            message = "Set travel mode to " + param;
-            break;
         default:
             message = "Unknown Message"
 
@@ -200,12 +190,6 @@ $(function() {
                 hide: "fold",
                 autoOpen: false
             });
-
-    $("#travelMode").buttonset();
-    $("#travelMode").change(function() {
-        var checkedValue = $("input[name=travelMode]:checked").val();
-        sendMessageToServer(SET_TRAVEL_MODE + checkedValue);
-    });
 
     $("#reset").button();
     $("#reset").click(function() {
@@ -332,6 +316,6 @@ $(document).bind("keydown", "right", function() {
     sendMessageToServer(RIGHT);
 });
 $(document).bind("keydown", "space", function() {
-    sendMessageToServer(STOP);
+    sendMessageToServer(EMERGENCY_STOP);
 });
 

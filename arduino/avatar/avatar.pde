@@ -35,13 +35,7 @@ const byte NotArrive = 0x00;
 const char START_CHAR = '!';
 const char STOP_CHAR = '?';
 
-// Character constants for travel modes
-const char SET_TRAVEL_MODE = 'Z'; //
-const char CONTINUOUS_TRAVEL = 0; // Travels continuously until stop command is received
-const char INCREMENTAL_TRAVEL = 1; // Moves f/b/l/r based on the set distances
-
 // Character constants for directional commands. Not parameters. Use distance specified in settings
-// Interpreted differently depending on the mode of travel
 const char FORWARD = 'f';
 const char BACKWARD = 'b';
 const char LEFT = 'l';
@@ -73,26 +67,14 @@ const char COLLISION_DISTANCE ='C';
 const char RESET = 'T';
 
 // Parameter Defaults for incremental travel
-const unsigned int I_DefaultForwardDistance = 20; // 32767 is max
-const unsigned int I_DefaultReverseDistance = 10;  // 32767 is max
-const unsigned int I_DefaultRotationDistance = 5; // 32767 is max
-const int I_DefaultFrontCollisionDistance = 5; // in centimeters;
+const unsigned int DefaultForwardDistance = 20; // 32767 is max
+const unsigned int DefaultReverseDistance = 10;  // 32767 is max
+const unsigned int DefaultRotationDistance = 5; // 32767 is max
+const int DefaultFrontCollisionDistance = 5; // in centimeters;
 
 // According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
-const byte I_DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default. 255 is max
-const unsigned int I_DefaultMaximumSpeed = 36; // 2 positions per .5 second. 36 is the default;  65535 is max
-
-// Parameter Defaults for continuous travel
-const unsigned int C_DefaultForwardDistance = 20; // 32767 is max
-const unsigned int C_DefaultReverseDistance = 10;  // 32767 is max
-const unsigned int C_DefaultRotationDistance = 5; // 32767 is max
-const int C_DefaultFrontCollisionDistance = 5; // in centimeters
-
-// According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
-const byte C_DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default. 255 is max
-const unsigned int C_DefaultMaximumSpeed = 36; // 2 positions per .5 second. 36 is the default;  65535 is max
-
-int travelMode = CONTINUOUS_TRAVEL;
+const byte DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default. 255 is max
+const unsigned int DefaultMaximumSpeed = 36; // 2 positions per .5 second. 36 is the default;  65535 is max
 
 // Debug and logging constants and variables
 const char SET_DEBUG = 'D'; // followed by debug level of 0, 1, 2
@@ -217,26 +199,17 @@ void sendParam(char param) {
 }
 
 void resetParametersToDefaults() {
-  if (travelMode == INCREMENTAL_TRAVEL) {
-    rampSpeed = I_DefaultRampSpeed;
-    maximumSpeed = I_DefaultMaximumSpeed;
-    forwardDistance = I_DefaultForwardDistance;
-    reverseDistance = I_DefaultReverseDistance;
-    rotationDistance = I_DefaultRotationDistance;
-    frontCollisionDistance = I_DefaultFrontCollisionDistance;
-  }  
-  else {
-    rampSpeed = C_DefaultRampSpeed;
-    maximumSpeed = C_DefaultMaximumSpeed;
-    forwardDistance = C_DefaultForwardDistance;
-    reverseDistance = C_DefaultReverseDistance;
-    rotationDistance = C_DefaultRotationDistance;
-    frontCollisionDistance = C_DefaultFrontCollisionDistance;
-  }
+
+  rampSpeed = DefaultRampSpeed;
+  maximumSpeed = DefaultMaximumSpeed;
+  forwardDistance = DefaultForwardDistance;
+  reverseDistance = DefaultReverseDistance;
+  rotationDistance = DefaultRotationDistance;
+  frontCollisionDistance = DefaultFrontCollisionDistance;
+
 }
 
 void sendAllParams() {
-  sendParam(SET_TRAVEL_MODE, travelMode);
   sendParam(RAMP_SPEED, rampSpeed);
   sendParam(MAXIMUM_SPEED, maximumSpeed);
   sendParam(FORWARD_DISTANCE, forwardDistance);
@@ -305,36 +278,16 @@ void performCommand(String command) {
     smoothStop();
     break;
   case FORWARD:
-    if (param == INCREMENTAL_TRAVEL) {
-      travelNumberOfPositions(BothMotors, FORWARD_DIRECTION * forwardDistance);
-    } 
-    else {
-      travel(FORWARD_DIRECTION);
-    };
+    travelNumberOfPositions(BothMotors, FORWARD_DIRECTION * forwardDistance);
     break;
   case BACKWARD:
-    if (param == INCREMENTAL_TRAVEL) {
-      travelNumberOfPositions(BothMotors, REVERSE_DIRECTION * reverseDistance);
-    } 
-    else {
-      travel(REVERSE_DIRECTION);
-    };
+    travelNumberOfPositions(BothMotors, REVERSE_DIRECTION * reverseDistance);
     break;
   case LEFT:
-    if (param == INCREMENTAL_TRAVEL) {
-      rotatePositions(LEFT_ROTATION * rotationDistance);
-    } 
-    else {
-      rotate(LEFT_ROTATION);
-    };
+    rotatePositions(LEFT_ROTATION * rotationDistance);
     break;
   case RIGHT:
-    if (param == INCREMENTAL_TRAVEL) {
-      rotatePositions(RIGHT_ROTATION * rotationDistance);
-    } 
-    else {
-      rotate(RIGHT_ROTATION);
-    };
+    rotatePositions(RIGHT_ROTATION * rotationDistance);
     break;
   case RAMP_SPEED:
     setRampSpeed(param);
@@ -366,10 +319,6 @@ void performCommand(String command) {
   case READ_ALL_PARAMS:
     sendAllParams();
     break;
-  case SET_TRAVEL_MODE:
-    travelMode = param;
-    hardReset();
-    break;
   }
 }
 
@@ -385,10 +334,6 @@ void rotatePositions(int positions) {
   travelNumberOfPositions(RightMotor, -1 * positions);
 }
 
-void rotate(int directionOfRotation) {
-
-}
-
 // Move forward or backward by the number of encoder positions specified. Commands are cumulative.
 // Forward if position < 0
 // Backward if position > 0
@@ -396,10 +341,6 @@ void rotate(int directionOfRotation) {
 void travelNumberOfPositions(byte motorId, int positions) {
   log("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId, DEBUG_ON);
   issueMotorCommand(TRVL, motorId, positions);
-}
-
-void travel(int directionOfTravel) {
-
 }
 
 // Immediate stop without deceleration
@@ -601,6 +542,10 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
+
+
+
+
 
 
 
