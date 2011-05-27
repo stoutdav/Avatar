@@ -170,6 +170,7 @@ $(function() {
 
     $("#debugPopout").dialog({
                 title: "Debug Output",
+                position: "left, bottom",
                 width: 375,
                 modal: false,
                 autoOpen: false,
@@ -178,6 +179,22 @@ $(function() {
                     $("#debug").buttonset("refresh");
                     sendMessageToServer(SET_DEBUG + "0");
                 }
+            });
+
+    $("#sliders").button();
+    $("#sliders").click(function() {
+        $("#slidersPopout").dialog("open");
+    });
+
+    $("#slidersPopout").dialog({
+                title: "Motor & Sensor Controls",
+                position: "top, right",
+                resizable: false,
+                draggable: false,
+                modal: true,
+                show: "slide",
+                hide: "fold",
+                autoOpen: false
             });
 
     $("#reset").button();

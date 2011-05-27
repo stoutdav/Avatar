@@ -18,27 +18,14 @@
     </div>
 
     <!-- Row 2-->
-    <div class="span-8">
+    <div class="span-8 append-16 last">
         Use Arrow Keys and Space for motion/stop.<br>
         Enter for emergency stop.
     </div>
-    <div class="span-8 append-8 last">
-        <label for="rampSpeed">Ramp speed:</label>
-        <input type="text" id="rampSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
-
-        <div id="rampSpeedSlider"></div>
-    </div>
 
     <!--Row 3-->
-    <div class="prepend-2 span-2">
+    <div class="prepend-2 span-2 append-20 last">
         <button id="fwd">FWD</button>
-    </div>
-
-    <div class="prepend-4 span-8 append-8 last">
-        <label for="maxSpeed">Max speed:</label>
-        <input type="text" id="maxSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
-
-        <div id="maxSpeedSlider"></div>
     </div>
 
     <!--Row 4-->
@@ -50,64 +37,80 @@
         <button id="stop">STOP</button>
     </div>
 
-    <div class="span-2">
+    <div class="span-2 append-18 last">
         <button id="right">RIGHT</button>
     </div>
 
-    <div class="prepend-2 span-8 append-8 last">
-        <label for="forwardDistance">Forward distance:</label>
-        <input type="text" id="forwardDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
-
-        <div id="forwardDistanceSlider"></div>
-    </div>
-
     <!--Row 5-->
-    <div class="prepend-2 span-2">
+    <div class="prepend-2 span-22 last">
         <button id="rev">REV</button>
-    </div>
-    <div class="prepend-4 span-8 append-8 last">
-        <label for="reverseDistance">Reverse distance:</label>
-        <input type="text" id="reverseDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
-
-        <div id="reverseDistanceSlider"></div>
     </div>
 
     <!--Row 6-->
-    <div class="prepend-1 span-4 ">
+    <div class="prepend-1 span-4 append-19 last ">
         <button id="emergency_stop">EMERGENCY STOP</button>
-    </div>
-    <div class="prepend-3 span-8 append-8 last">
-        <label for="rotationDistance">Rotation distance:</label>
-        <input type="text" id="rotationDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
-
-        <div id="rotationDistanceSlider"></div>
     </div>
 
     <!--Row 7-->
-    <div class="prepend-8 span-8 append-8 last">
-        <label for="frontSensor">Front sensor distance (cm):</label>
-        <input type="text" id="frontSensor" style="border:0; color:#f6931f; font-weight:bold;"/>
-
-        <div id="frontSensorSlider"></div>
+    <div class="span-24">
+        <br>
     </div>
 
     <!--Row 8-->
     <div class="span-7">
         <div id="debug">
             Debug:
-            <input type="radio" id="debugOff" value="0" name="debug" checked="checked"/><label for="debugOff">Off</label>
+            <input type="radio" id="debugOff" value="0" name="debug" checked="checked"/><label
+                for="debugOff">Off</label>
             <input type="radio" id="debugOn" value="1" name="debug"/><label for="debugOn">On</label>
             <input type="radio" id="debugChatty" value="2" name="debug"/><label for="debugChatty">Chatty</label>
         </div>
     </div>
-    <div class="prepend-7 span-4 append-6 last">
-        <button id="reset">Reset</button>
-
+    <div class="prepend-1 span-4 append-12 last">
+        <button id="sliders">Show Controls</button>
     </div>
+
 
     <div id="debugPopout" class="debugPopout">
         <p id="debugOutput" class="debugOutput"></p>
     </div>
+
+    <div id="slidersPopout">
+        <label for="rampSpeed">Ramp speed:</label>
+        <input type="text" id="rampSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+
+        <div id="rampSpeedSlider"></div>
+
+        <label for="maxSpeed">Max speed:</label>
+        <input type="text" id="maxSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+
+        <div id="maxSpeedSlider"></div>
+
+        <label for="forwardDistance">Forward distance:</label>
+        <input type="text" id="forwardDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+
+        <div id="forwardDistanceSlider"></div>
+
+        <label for="reverseDistance">Reverse distance:</label>
+        <input type="text" id="reverseDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+
+        <div id="reverseDistanceSlider"></div>
+
+        <label for="rotationDistance">Rotation distance:</label>
+        <input type="text" id="rotationDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+
+        <div id="rotationDistanceSlider"></div>
+
+        <label for="frontSensor">Front sensor (cm):</label>
+        <input type="text" id="frontSensor" style="border:0; color:#f6931f; font-weight:bold;"/>
+
+        <div id="frontSensorSlider"></div>
+
+        <button id="reset">Reset</button>
+
+    </div>
+
+</div>
 </div>
 
 <script type="text/javascript" src="js/socket.io.js"></script>
