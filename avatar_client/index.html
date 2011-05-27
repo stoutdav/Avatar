@@ -19,24 +19,26 @@
 
     <!-- Row 2-->
     <div class="span-8">
-        Use Arrow Keys and Space for motion/stop.<br>
-        Enter for emergency stop.
+        Use Arrow Keys and Space for motion/stop.
     </div>
     <div class="span-8 append-8 last">
         Travel Mode
     </div>
 
     <!--Row 3-->
-    <div class="prepend-2 span-2 append-20 last">
-        <button id="fwd">FWD</button>
-    </div>
-    <div id="travelMode">
+    <div id="travelMode" class="prepend-8 span-16 last">
         <input type="radio" id="incrementalTravelMode" value="i" name="travelMode" checked="checked"/><label
             for="incrementalTravelMode">Incremental</label>
-        <input type="radio" id="continuousTravelMode" value="c" name="travelMode"/><label for="continuousTravelMode">Continuous</label>
+        <input type="radio" id="continuousTravelMode" value="c" name="travelMode"/><label
+            for="continuousTravelMode">Continuous</label>
     </div>
 
     <!--Row 4-->
+    <div class="prepend-2 span-2 append-20 last">
+        <button id="fwd">FWD</button>
+    </div>
+
+    <!--Row 5-->
     <div class="span-2">
         <button id="left">LEFT</button>
     </div>
@@ -49,18 +51,13 @@
         <button id="right">RIGHT</button>
     </div>
 
-    <!--Row 5-->
+    <!--Row 6-->
     <div class="prepend-2 span-22 last">
         <button id="rev">REV</button>
     </div>
 
-    <!--Row 6-->
-    <div class="prepend-1 span-4 append-19 last ">
-        <button id="emergency_stop">EMERGENCY STOP</button>
-    </div>
-
     <!--Row 7-->
-    <div class="span-24">
+    <div class="prepend-1 span-4 append-19 last ">
         <br>
     </div>
 
@@ -118,7 +115,6 @@
 
     </div>
 
-</div>
 </div>
 
 <script type="text/javascript" src="js/socket.io.js"></script>

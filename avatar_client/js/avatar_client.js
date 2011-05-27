@@ -12,7 +12,6 @@ var FORWARD = 'f';
 var REVERSE = 'b';
 var RIGHT = 'r';
 var LEFT = 'l';
-var STOP = 's';
 var EMERGENCY_STOP = 'S';
 
 // Parameter constants. Must match constants in arduino avatar.pde file. Also used when setting a param in GUI
@@ -157,11 +156,6 @@ $(function() {
 
     $("#stop").button();
     $("#stop").click(function() {
-        sendMessageToServer(STOP)
-    });
-
-    $("#emergency_stop").button();
-    $("#emergency_stop").click(function() {
         sendMessageToServer(EMERGENCY_STOP)
     });
 
@@ -334,8 +328,5 @@ $(document).bind("keydown", "right", function() {
 });
 $(document).bind("keydown", "space", function() {
     sendMessageToServer(STOP);
-});
-$(document).bind("keydown", "return", function() {
-    sendMessageToServer(EMERGENCY_STOP);
 });
 
