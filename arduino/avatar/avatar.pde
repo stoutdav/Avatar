@@ -48,10 +48,7 @@ const char FORWARD_DISTANCE = 'F';
 const char REVERSE_DISTANCE = 'B';
 const char ROTATION_DISTANCE = 'R';
 const char COLLISION_DISTANCE ='C';
-
-// Travel modes.
-const char INCREMENTAL_TRAVEL = 'i'; // Moves f/b/l/r based on the set distances
-const char CONTINUOUS_TRAVEL = 'c'; // Travels continuously until stop command is received
+const char RESET = 'T';
 
 // Constant definitions for Motor/Position Controllers:
 // http://www.parallax.com/Portals/0/Downloads/docs/prod/motors/27906-PositionClrKit-v1.1.pdf
@@ -82,11 +79,13 @@ const unsigned int DefaultRotationDistance = 5; // 32767 is max
 // Constant definitions for front sonar sensor
 const int DefaultFrontCollisionDistance = 5; // in centimeters
 
-// Character constants for system commands
-const char SET_DEBUG = 'D'; // followed by debug level of 0, 1, 2
-const char RESET = 'T';
+// Character constants for travel modes
+const char SET_TRAVEL_MODE = 'Z'; //
+const char INCREMENTAL_TRAVEL = 'i'; // Moves f/b/l/r based on the set distances
+const char CONTINUOUS_TRAVEL = 'c'; // Travels continuously until stop command is received
 
 // Debug and logging constants and variables
+const char SET_DEBUG = 'D'; // followed by debug level of 0, 1, 2
 const char DEBUG_OFF = 0;
 const char DEBUG_ON = 1;
 const char DEBUG_CHATTY = 2;

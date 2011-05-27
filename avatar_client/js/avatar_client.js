@@ -6,6 +6,36 @@ var STOP_CHAR = "?";
 var COLLISION_WARNING = "W";
 var DEBUG_MESSAGE = "#";
 
+// Sending messages
+// Command constants. Must match constants in arduino avatar.pde file
+var FORWARD = 'f';
+var REVERSE = 'b';
+var RIGHT = 'r';
+var LEFT = 'l';
+var STOP = 's';
+var EMERGENCY_STOP = 'S';
+
+// Parameter constants. Must match constants in arduino avatar.pde file. Also used when setting a param in GUI
+var RAMP_SPEED = 'A'; //A for acceleration
+var MAXIMUM_SPEEP = 'M';
+var FORWARD_DISTANCE = 'F';
+var REVERSE_DISTANCE = 'B';
+var ROTATION_DISTANCE = 'R';
+var COLLISION_DISTANCE = 'C';
+var RESET = 'T';
+
+var READ_PARAM = 'P'; // Used when requesting a parameter value
+var READ_ALL_PARAMS = 'Y';  // Used when requesting all parameter values
+
+// System constants. Must match constants in arduino avatar.pde file
+var SET_TRAVEL_MODE = 'Z';
+var INCREMENTAL_TRAVEL = 'i'; // Moves f/b/l/r based on the set distances
+var CONTINUOUS_TRAVEL = 'c'; // Travels continuously until stop command is receive
+
+var SET_DEBUG = 'D';
+var DEBUG_OFF = '0';
+var DEBUG_ON = '1';
+
 // Receiving messages
 var messageBuffer = [];
 var socket = new io.Socket();
@@ -104,31 +134,6 @@ function handleMessageFromServer(code) {
     }
     console.log("Client: Received message from server", message);
 }
-
-// Sending messages
-// Command constants. Must match constants in arduino avatar.pde file
-var FORWARD = 'f';
-var REVERSE = 'b';
-var RIGHT = 'r';
-var LEFT = 'l';
-var STOP = 's';
-var EMERGENCY_STOP = 'S';
-
-// Parameter constants. Must match constants in arduino avatar.pde file. Also used when setting a param in GUI
-var RAMP_SPEED = 'A'; //A for acceleration
-var MAXIMUM_SPEEP = 'M';
-var FORWARD_DISTANCE = 'F';
-var REVERSE_DISTANCE = 'B';
-var ROTATION_DISTANCE = 'R';
-var COLLISION_DISTANCE = 'C';
-
-var READ_PARAM = 'P'; // Used when requesting a parameter value
-var READ_ALL_PARAMS = 'Y';  // Used when requesting all parameter values
-
-// System constants. Must match constants in arduino avatar.pde file
-var SET_DEBUG = 'D';
-var RESET = 'T';
-
 $(function() {
     $("#fwd").button();
     $("#fwd").click(function() {
@@ -162,7 +167,7 @@ $(function() {
 
     $("#debug").buttonset();
     $("#debug").change(function() {
-        var checkedValue = $("input[@name=debug]:checked").val();
+        var checkedValue = $("input[name=debug]:checked").val();
         $("#debugPopout").dialog("open");
 
         sendMessageToServer(SET_DEBUG + checkedValue);
@@ -177,7 +182,7 @@ $(function() {
                 close: function(event, ui) {
                     $("input[name=debug][value=0]").attr("checked", true);
                     $("#debug").buttonset("refresh");
-                    sendMessageToServer(SET_DEBUG + "0");
+                    sendMessageToServer(SET_DEBUG + DEBUG_OFF);
                 }
             });
 
@@ -196,6 +201,12 @@ $(function() {
                 hide: "fold",
                 autoOpen: false
             });
+
+    $("#travelMode").buttonset();
+    $("#travelMode").change(function() {
+        var checkedValue = $("input[name=travelMode]:checked").val();
+        sendMessageToServer(SET_TRAVEL_MODE + checkedValue);
+    });
 
     $("#reset").button();
     $("#reset").click(function() {
