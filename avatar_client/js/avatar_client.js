@@ -28,8 +28,8 @@ var READ_ALL_PARAMS = 'Y';  // Used when requesting all parameter values
 
 // System constants. Must match constants in arduino avatar.pde file
 var SET_TRAVEL_MODE = 'Z';
-var INCREMENTAL_TRAVEL = 'i'; // Moves f/b/l/r based on the set distances
-var CONTINUOUS_TRAVEL = 'c'; // Travels continuously until stop command is receive
+var CONTINUOUS_TRAVEL = '0'; // Travels continuously until stop command is receive
+var INCREMENTAL_TRAVEL = '1'; // Moves f/b/l/r based on the set distances
 
 var SET_DEBUG = 'D';
 var DEBUG_OFF = '0';
@@ -126,6 +126,11 @@ function handleMessageFromServer(code) {
             $("#frontSensorSlider").slider("value", param);
             $("#frontSensor").val(param);
             message = "Set front sensor distance to " + param;
+            break;
+        case SET_TRAVEL_MODE:
+            $("input[name=travelMode][value=" + param + "]").attr("checked", true);
+            $("#travelMode").buttonset("refresh");
+            message = "Set travel mode to " + param;
             break;
         default:
             message = "Unknown Message"

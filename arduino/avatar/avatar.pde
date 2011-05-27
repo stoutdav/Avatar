@@ -6,49 +6,12 @@
 
 #include <NewSoftSerial.h>
 
-// Pin definitions for motors
+// Pin definitions
 #define MOTOR_TX_RX_PIN 3
-
-// Pin definitions for sensors
 #define FRONT_PING_SENSOR_PIN 4
 
 // Variables used for motor control
 NewSoftSerial MotorSerial(MOTOR_TX_RX_PIN, MOTOR_TX_RX_PIN);
-
-// Character constants for serial interface
-const char START_CHAR = '!';
-const char STOP_CHAR = '?';
-
-// Character constants for return codes back to server
-const char COLLISION_WARNING = 'W'; // takes 3 chars representing distance in cms
-const char DEBUG_MESSAGE = '#'; // takes 3 chars representing distance in cms
-
-// Character constants for directional commands. No parameters. Use distance specified in settings
-const char FORWARD = 'f';
-const char BACKWARD = 'b';
-const char LEFT = 'l';
-const char RIGHT = 'r';
-const char EMERGENCY_STOP = 'S';
-const char SMOOTH_STOP = 's';
-
-// Constants to represent the direction of motion
-const int FORWARD_DIRECTION = -1;
-const int REVERSE_DIRECTION = 1;
-const int LEFT_ROTATION = 1;
-const int RIGHT_ROTATION = -1;
-
-// Used by client to request certain info from Arduino
-const char READ_PARAM = 'P';  // needs to be followed by param constant from list
-const char READ_ALL_PARAMS = 'Y';
-
-// Character Constants for parameter setting commands and params for reading commands. Used in getting/setting over serial
-const char RAMP_SPEED = 'A'; //A for acceleration
-const char MAXIMUM_SPEED = 'M';
-const char FORWARD_DISTANCE = 'F';
-const char REVERSE_DISTANCE = 'B';
-const char ROTATION_DISTANCE = 'R';
-const char COLLISION_DISTANCE ='C';
-const char RESET = 'T';
 
 // Constant definitions for Motor/Position Controllers:
 // http://www.parallax.com/Portals/0/Downloads/docs/prod/motors/27906-PositionClrKit-v1.1.pdf
@@ -68,21 +31,68 @@ const byte BothMotors = 0x00;    //ID for both motrs
 const byte Arrived = 0xFF;
 const byte NotArrive = 0x00;
 
-// Configuration for motor controllers
-// According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
-const byte DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default. 255 is max
-const unsigned int DefaultMaximumSpeed = 36; // 2 positions per .5 second. 36 is the default;  65535 is max
-const unsigned int DefaultForwardDistance = 20; // 32767 is max
-const unsigned int DefaultReverseDistance = 10;  // 32767 is max
-const unsigned int DefaultRotationDistance = 5; // 32767 is max
-
-// Constant definitions for front sonar sensor
-const int DefaultFrontCollisionDistance = 5; // in centimeters
+// Character constants for serial interface
+const char START_CHAR = '!';
+const char STOP_CHAR = '?';
 
 // Character constants for travel modes
 const char SET_TRAVEL_MODE = 'Z'; //
-const char INCREMENTAL_TRAVEL = 'i'; // Moves f/b/l/r based on the set distances
-const char CONTINUOUS_TRAVEL = 'c'; // Travels continuously until stop command is received
+const char CONTINUOUS_TRAVEL = 0; // Travels continuously until stop command is received
+const char INCREMENTAL_TRAVEL = 1; // Moves f/b/l/r based on the set distances
+
+// Character constants for directional commands. Not parameters. Use distance specified in settings
+// Interpreted differently depending on the mode of travel
+const char FORWARD = 'f';
+const char BACKWARD = 'b';
+const char LEFT = 'l';
+const char RIGHT = 'r';
+const char EMERGENCY_STOP = 'S';
+const char SMOOTH_STOP = 's';
+
+// Constants to represent the direction of motion
+const int FORWARD_DIRECTION = -1;
+const int REVERSE_DIRECTION = 1;
+const int LEFT_ROTATION = 1;
+const int RIGHT_ROTATION = -1;
+
+// Used by client to request certain info from Arduino
+const char READ_PARAM = 'P';  // needs to be followed by param constant from list
+const char READ_ALL_PARAMS = 'Y';
+
+// Character constants for return codes back to server
+const char COLLISION_WARNING = 'W'; // takes 3 chars representing distance in cms
+const char DEBUG_MESSAGE = '#'; // takes 3 chars representing distance in cms
+
+// Character Constants for parameter setting commands and params for reading commands. Used in getting/setting over serial
+const char RAMP_SPEED = 'A'; //A for acceleration
+const char MAXIMUM_SPEED = 'M';
+const char FORWARD_DISTANCE = 'F';
+const char REVERSE_DISTANCE = 'B';
+const char ROTATION_DISTANCE = 'R';
+const char COLLISION_DISTANCE ='C';
+const char RESET = 'T';
+
+// Parameter Defaults for incremental travel
+const unsigned int I_DefaultForwardDistance = 20; // 32767 is max
+const unsigned int I_DefaultReverseDistance = 10;  // 32767 is max
+const unsigned int I_DefaultRotationDistance = 5; // 32767 is max
+const int I_DefaultFrontCollisionDistance = 5; // in centimeters;
+
+// According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
+const byte I_DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default. 255 is max
+const unsigned int I_DefaultMaximumSpeed = 36; // 2 positions per .5 second. 36 is the default;  65535 is max
+
+// Parameter Defaults for continuous travel
+const unsigned int C_DefaultForwardDistance = 20; // 32767 is max
+const unsigned int C_DefaultReverseDistance = 10;  // 32767 is max
+const unsigned int C_DefaultRotationDistance = 5; // 32767 is max
+const int C_DefaultFrontCollisionDistance = 5; // in centimeters
+
+// According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
+const byte C_DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default. 255 is max
+const unsigned int C_DefaultMaximumSpeed = 36; // 2 positions per .5 second. 36 is the default;  65535 is max
+
+int travelMode = CONTINUOUS_TRAVEL;
 
 // Debug and logging constants and variables
 const char SET_DEBUG = 'D'; // followed by debug level of 0, 1, 2
@@ -207,15 +217,26 @@ void sendParam(char param) {
 }
 
 void resetParametersToDefaults() {
-  rampSpeed = DefaultRampSpeed;
-  maximumSpeed = DefaultMaximumSpeed;
-  forwardDistance = DefaultForwardDistance;
-  reverseDistance = DefaultReverseDistance;
-  rotationDistance = DefaultRotationDistance;
-  frontCollisionDistance = DefaultFrontCollisionDistance;
+  if (travelMode == INCREMENTAL_TRAVEL) {
+    rampSpeed = I_DefaultRampSpeed;
+    maximumSpeed = I_DefaultMaximumSpeed;
+    forwardDistance = I_DefaultForwardDistance;
+    reverseDistance = I_DefaultReverseDistance;
+    rotationDistance = I_DefaultRotationDistance;
+    frontCollisionDistance = I_DefaultFrontCollisionDistance;
+  }  
+  else {
+    rampSpeed = C_DefaultRampSpeed;
+    maximumSpeed = C_DefaultMaximumSpeed;
+    forwardDistance = C_DefaultForwardDistance;
+    reverseDistance = C_DefaultReverseDistance;
+    rotationDistance = C_DefaultRotationDistance;
+    frontCollisionDistance = C_DefaultFrontCollisionDistance;
+  }
 }
 
 void sendAllParams() {
+  sendParam(SET_TRAVEL_MODE, travelMode);
   sendParam(RAMP_SPEED, rampSpeed);
   sendParam(MAXIMUM_SPEED, maximumSpeed);
   sendParam(FORWARD_DISTANCE, forwardDistance);
@@ -337,15 +358,17 @@ void performCommand(String command) {
     setDebug(param);
     break;
   case RESET:
-    softReset();
-    resetParametersToDefaults();
-    sendAllParams();
+    hardReset();
     break;
   case READ_PARAM:
     sendParam(param);
     break;
   case READ_ALL_PARAMS:
     sendAllParams();
+    break;
+  case SET_TRAVEL_MODE:
+    travelMode = param;
+    hardReset();
     break;
   }
 }
@@ -421,6 +444,12 @@ void softReset() {
   clearPosition(BothMotors);
   clearPosition(BothMotors);
   clearPosition(BothMotors);
+}
+
+void hardReset() {
+  softReset();
+  resetParametersToDefaults();
+  sendAllParams();
 }
 
 void issueMotorCommand(byte command, byte motorId) {
@@ -572,4 +601,6 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
+
+
 
