@@ -163,8 +163,22 @@ $(function() {
     $("#debug").buttonset();
     $("#debug").change(function() {
         var checkedValue = $("input[@name=debug]:checked").val();
+        $("#debugPopout").dialog("open");
+
         sendMessageToServer(SET_DEBUG + checkedValue);
     });
+
+    $("#debugPopout").dialog({
+                title: "Debug Output",
+                width: 375,
+                modal: false,
+                autoOpen: false,
+                close: function(event, ui) {
+                    $("input[name=debug][value=0]").attr("checked", true);
+                    $("#debug").buttonset("refresh");
+                    sendMessageToServer(SET_DEBUG + "0");
+                }
+            });
 
     $("#reset").button();
     $("#reset").click(function() {

@@ -92,21 +92,20 @@
     </div>
 
     <!--Row 8-->
-    <div class="span-5">
+    <div class="span-7">
         <div id="debug">
-            Debug output:
+            Debug:
+            <input type="radio" id="debugOff" value="0" name="debug" checked="checked"/><label for="debugOff">Off</label>
             <input type="radio" id="debugOn" value="1" name="debug"/><label for="debugOn">On</label>
-            <input type="radio" id="debugOff" value="0" name="debug" checked="checked"/><label
-                for="debugOff">Off</label>
+            <input type="radio" id="debugChatty" value="2" name="debug"/><label for="debugChatty">Chatty</label>
         </div>
     </div>
-    <div class="prepend-9 span-4 append-6 last">
+    <div class="prepend-7 span-4 append-6 last">
         <button id="reset">Reset</button>
 
     </div>
 
-    <!--Row 9-->
-    <div class="span-16 append-8 last">
+    <div id="debugPopout" class="debugPopout">
         <p id="debugOutput" class="debugOutput"></p>
     </div>
 </div>
