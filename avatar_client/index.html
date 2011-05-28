@@ -12,49 +12,20 @@
 <body>
 
 <div class="container">
-    <!--Row 1-->
     <div class="span-16 append-8 last">
-        <p id="messages" class="messages"></p>
+        <p id="messages"></p>
     </div>
 
-    <!-- Row 2-->
-    <div class="span-8 append-16 last">
-        Use Arrow Keys and Space for motion/stop.
+    <div class="prepend-4 span-8 append-12 last">
+        <div id="joystickPort">
+            <div id="joystick" class="ui-widget-content"><p></p></div>
+        </div>
     </div>
 
-    <!--Row 3-->
-    <div class="prepend-8 span-16 last">
-    </div>
-
-    <!--Row 4-->
-    <div class="prepend-2 span-2 append-20 last">
-        <button id="fwd">FWD</button>
-    </div>
-
-    <!--Row 5-->
-    <div class="span-2">
-        <button id="left">LEFT</button>
-    </div>
-
-    <div class="span-2">
-        <button id="stop">STOP</button>
-    </div>
-
-    <div class="span-2 append-18 last">
-        <button id="right">RIGHT</button>
-    </div>
-
-    <!--Row 6-->
-    <div class="prepend-2 span-22 last">
-        <button id="rev">REV</button>
-    </div>
-
-    <!--Row 7-->
-    <div class="prepend-1 span-4 append-19 last ">
+    <div class="span-24">
         <br>
-    </div>
 
-    <!--Row 8-->
+    </div>
     <div class="span-7">
         <div id="debug">
             Debug:
@@ -69,7 +40,7 @@
     </div>
 
 
-    <div id="debugPopout" class="debugPopout">
+    <div id="debugPopout">
         <p id="debugOutput" class="debugOutput"></p>
     </div>
 
@@ -110,10 +81,10 @@
 
 </div>
 
+
 <script type="text/javascript" src="js/socket.io.js"></script>
 <script type="text/javascript" src="js/jquery-1.5.1.min.js"></script>
 <script type="text/javascript" src="js/jquery-ui-1.8.13.custom.min.js"></script>
-<script type="text/javascript" src="js/jquery.hotkeys.js"></script>
 <script type="text/javascript" src="js/avatar_client.js"></script>
 
 </body>

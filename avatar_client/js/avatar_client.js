@@ -129,30 +129,12 @@ function handleMessageFromServer(code) {
     console.log("Client: Received message from server", message);
 }
 $(function() {
-    $("#fwd").button();
-    $("#fwd").click(function() {
-        sendMessageToServer(FORWARD)
-    });
 
-    $("#rev").button();
-    $("#rev").click(function() {
-        sendMessageToServer(REVERSE)
-    });
+    $("#joystick").draggable({
+                revert:true,
+                containment: "parent",
 
-    $("#right").button();
-    $("#right").click(function() {
-        sendMessageToServer(RIGHT)
-    });
-
-    $("#left").button();
-    $("#left").click(function() {
-        sendMessageToServer(LEFT)
-    });
-
-    $("#stop").button();
-    $("#stop").click(function() {
-        sendMessageToServer(EMERGENCY_STOP)
-    });
+            });
 
     $("#debug").buttonset();
     $("#debug").change(function() {
@@ -196,126 +178,99 @@ $(function() {
         sendMessageToServer(RESET)
     });
 
-    // The default values for each slider should match what's in the arduino avatar.pde file
-    $(function() {
-        $("#rampSpeedSlider").slider({
-                    range: "min",
-                    min: 1,
-                    max: 100,
-                    value: 15,
-                    slide: function(event, ui) {
-                        $("#rampSpeed").val(ui.value);
-                    },
-                    stop: function(event, ui) {
-                        sendMessageToServer(RAMP_SPEED + ui.value);
-                    }
-                });
-        $("#rampSpeed").val($("#rampSpeedSlider").slider("value"));
-    });
+// The default values for each slider should match what's in the arduino avatar.pde file
+    $("#rampSpeedSlider").slider({
+                range: "min",
+                min: 1,
+                max: 100,
+                value: 15,
+                slide: function(event, ui) {
+                    $("#rampSpeed").val(ui.value);
+                },
+                stop: function(event, ui) {
+                    sendMessageToServer(RAMP_SPEED + ui.value);
+                }
+            });
+    $("#rampSpeed").val($("#rampSpeedSlider").slider("value"));
 
-    $(function() {
-        $("#maxSpeedSlider").slider({
-                    range: "min",
-                    min: 1,
-                    max: 100,
-                    value: 36,
-                    slide: function(event, ui) {
-                        $("#maxSpeed").val(ui.value);
-                    },
-                    stop: function(event, ui) {
-                        sendMessageToServer(MAXIMUM_SPEEP + ui.value);
-                    }
-                });
-        $("#maxSpeed").val($("#maxSpeedSlider").slider("value"));
-    });
+    $("#maxSpeedSlider").slider({
+                range: "min",
+                min: 1,
+                max: 100,
+                value: 36,
+                slide: function(event, ui) {
+                    $("#maxSpeed").val(ui.value);
+                },
+                stop: function(event, ui) {
+                    sendMessageToServer(MAXIMUM_SPEEP + ui.value);
+                }
+            });
+    $("#maxSpeed").val($("#maxSpeedSlider").slider("value"));
 
-    $(function() {
-        $("#forwardDistanceSlider").slider({
-                    range: "min",
-                    min: 1,
-                    max: 100,
-                    value: 20,
-                    slide: function(event, ui) {
-                        $("#forwardDistance").val(ui.value);
-                    },
-                    stop: function(event, ui) {
-                        sendMessageToServer(FORWARD_DISTANCE + ui.value);
-                    }
-                });
-        $("#forwardDistance").val($("#forwardDistanceSlider").slider("value"));
-    });
+    $("#forwardDistanceSlider").slider({
+                range: "min",
+                min: 1,
+                max: 100,
+                value: 20,
+                slide: function(event, ui) {
+                    $("#forwardDistance").val(ui.value);
+                },
+                stop: function(event, ui) {
+                    sendMessageToServer(FORWARD_DISTANCE + ui.value);
+                }
+            });
+    $("#forwardDistance").val($("#forwardDistanceSlider").slider("value"));
 
-    $(function() {
-        $("#reverseDistanceSlider").slider({
-                    range: "min",
-                    min: 1,
-                    max: 100,
-                    value: 10,
-                    slide: function(event, ui) {
-                        $("#reverseDistance").val(ui.value);
-                    },
-                    stop: function(event, ui) {
-                        sendMessageToServer(REVERSE_DISTANCE + ui.value);
-                    }
-                });
-        $("#reverseDistance").val($("#reverseDistanceSlider").slider("value"));
-    });
+    $("#reverseDistanceSlider").slider({
+                range: "min",
+                min: 1,
+                max: 100,
+                value: 10,
+                slide: function(event, ui) {
+                    $("#reverseDistance").val(ui.value);
+                },
+                stop: function(event, ui) {
+                    sendMessageToServer(REVERSE_DISTANCE + ui.value);
+                }
+            });
+    $("#reverseDistance").val($("#reverseDistanceSlider").slider("value"));
 
-    $(function() {
-        $("#rotationDistanceSlider").slider({
-                    range: "min",
-                    min: 1,
-                    max: 50,
-                    value: 5,
-                    slide: function(event, ui) {
-                        $("#rotationDistance").val(ui.value);
-                    },
-                    stop: function(event, ui) {
-                        sendMessageToServer(ROTATION_DISTANCE + ui.value);
-                    }
-                });
-        $("#rotationDistance").val($("#rotationDistanceSlider").slider("value"));
-    });
+    $("#rotationDistanceSlider").slider({
+                range: "min",
+                min: 1,
+                max: 50,
+                value: 5,
+                slide: function(event, ui) {
+                    $("#rotationDistance").val(ui.value);
+                },
+                stop: function(event, ui) {
+                    sendMessageToServer(ROTATION_DISTANCE + ui.value);
+                }
+            });
+    $("#rotationDistance").val($("#rotationDistanceSlider").slider("value"));
 
-    $(function() {
-        $("#frontSensorSlider").slider({
-                    range: "min",
-                    min: 5,
-                    max: 100,
-                    value: 5,
-                    slide: function(event, ui) {
-                        $("#frontSensor").val(ui.value);
-                    },
-                    stop: function(event, ui) {
-                        sendMessageToServer(COLLISION_DISTANCE + ui.value);
-                    }
-                });
-        $("#frontSensor").val($("#frontSensorSlider").slider("value"));
-    });
+    $("#frontSensorSlider").slider({
+                range: "min",
+                min: 5,
+                max: 100,
+                value: 5,
+                slide: function(event, ui) {
+                    $("#frontSensor").val(ui.value);
+                },
+                stop: function(event, ui) {
+                    sendMessageToServer(COLLISION_DISTANCE + ui.value);
+                }
+            });
+    $("#frontSensor").val($("#frontSensorSlider").slider("value"));
 
-    // Once gui is setup get actual values from arduino
+// Once gui is setup get actual values from arduino
     sendMessageToServer(READ_ALL_PARAMS);
 
-});
+})
+        ;
 
 function sendMessageToServer(message) {
     socket.send(START_CHAR + message + STOP_CHAR);
 }
 
-// Hotkeys
-$(document).bind("keydown", "up", function() {
-    sendMessageToServer(FORWARD);
-});
-$(document).bind("keydown", "down", function() {
-    sendMessageToServer(REVERSE);
-});
-$(document).bind("keydown", "left", function() {
-    sendMessageToServer(LEFT);
-});
-$(document).bind("keydown", "right", function() {
-    sendMessageToServer(RIGHT);
-});
-$(document).bind("keydown", "space", function() {
-    sendMessageToServer(EMERGENCY_STOP);
-});
 
