@@ -35,13 +35,9 @@ const byte NotArrive = 0x00;
 const char START_CHAR = '!';
 const char STOP_CHAR = '?';
 
-// Character constants for directional commands. Not parameters. Use distance specified in settings
-const char FORWARD = 'f';
-const char BACKWARD = 'b';
-const char LEFT = 'l';
-const char RIGHT = 'r';
-const char EMERGENCY_STOP = 'S';
-const char SMOOTH_STOP = 's';
+// Joystick position. Followed by signed 3 char x position, POSITION delimiter, and 3 char y
+const char JOYSTICK = 'j';
+const char POSITION = 'x';
 
 // Constants to represent the direction of motion
 const int FORWARD_DIRECTION = -1;
@@ -50,8 +46,7 @@ const int LEFT_ROTATION = 1;
 const int RIGHT_ROTATION = -1;
 
 // Used by client to request certain info from Arduino
-const char READ_PARAM = 'P';  // needs to be followed by param constant from list
-const char READ_ALL_PARAMS = 'Y';
+const char SEND_ALL_PARAMS = 'Y';
 
 // Character constants for return codes back to server
 const char COLLISION_WARNING = 'W'; // takes 3 chars representing distance in cms
@@ -245,7 +240,7 @@ boolean hasForwardMotion() {
 }
 
 String getSerialInput() {
-  char command[4]; // 4 char commands + string end
+  char command[8]; // 8 char commands + string end. 9 Chars total
   delay(100); // Give the buffer a chance to fill up
   char val = Serial.read();
   if (val == START_CHAR) {
@@ -268,58 +263,51 @@ String getSerialInput() {
 
 void performCommand(String command) {
   char baseCommand = command[0];
-  int param = command.substring(1, 4).toInt();
+  String param = command.substring(1);
   log("Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param), DEBUG_ON);
   switch (baseCommand) {
-  case EMERGENCY_STOP:
-    emergencyStop();
-    break;
-  case SMOOTH_STOP:
-    smoothStop();
-    break;
-  case FORWARD:
-    travelNumberOfPositions(BothMotors, FORWARD_DIRECTION * forwardDistance);
-    break;
-  case BACKWARD:
-    travelNumberOfPositions(BothMotors, REVERSE_DIRECTION * reverseDistance);
-    break;
-  case LEFT:
-    rotatePositions(LEFT_ROTATION * rotationDistance);
-    break;
-  case RIGHT:
-    rotatePositions(RIGHT_ROTATION * rotationDistance);
-    break;
   case RAMP_SPEED:
-    setRampSpeed(param);
+    setRampSpeed(param.toInt());
     break;
   case MAXIMUM_SPEED:
-    setMaximumSpeed(param);
+    setMaximumSpeed(param.toInt());
     break;
   case FORWARD_DISTANCE:
-    setForwardDistance(param);
+    setForwardDistance(param.toInt());
     break;
   case REVERSE_DISTANCE:
-    setReverseDistance(param);
+    setReverseDistance(param.toInt());
     break;
   case ROTATION_DISTANCE:
-    setRotationDistance(param);
+    setRotationDistance(param.toInt());
     break;
   case COLLISION_DISTANCE:
-    setCollisionDistance(param);
+    setCollisionDistance(param.toInt());
     break;
   case SET_DEBUG:
-    setDebug(param);
+    setDebug(param.toInt());
     break;
   case RESET:
     hardReset();
     break;
-  case READ_PARAM:
-    sendParam(param);
-    break;
-  case READ_ALL_PARAMS:
+  case SEND_ALL_PARAMS:
     sendAllParams();
     break;
+  case JOYSTICK:
+    handleJoystickInput(param);
+    break;
+  default:
+    log("Unknown Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param), DEBUG_OFF);
   }
+}
+
+void handleJoystickInput(String param) {
+  int position = param.indexOf(POSITION);
+  String x_string = param.substring(0, position);
+  int x = x_string.toInt();
+  String y_string =  param.substring(position + 1);
+  int y = y_string.toInt();
+  log("Received Joystick position x: " + x_string + "y: " + y_string, DEBUG_ON);
 }
 
 // Motor commands
@@ -339,24 +327,24 @@ void rotatePositions(int positions) {
 // Backward if position > 0
 // Approx 1.33 cm per position
 void travelNumberOfPositions(byte motorId, int positions) {
-  log("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId, DEBUG_ON);
+  log("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId, DEBUG_CHATTY);
   issueMotorCommand(TRVL, motorId, positions);
 }
 
 // Immediate stop without deceleration
 void emergencyStop() {
-  log("Initating emergency stop", DEBUG_ON);
+  log("Initating emergency stop",  DEBUG_CHATTY);
   clearPosition(BothMotors);
 }
 
 // Smooth stop with deceleration. Not cumulative.
 void smoothStop() {
-  log("Initiating smooth stop", DEBUG_ON);
+  log("Initiating smooth stop",  DEBUG_CHATTY);
   travelNumberOfPositions(BothMotors, 0);
 }
 
 void clearPosition(byte motorId) {
-  log("Clearing positions for motorId(s): " + String((int)motorId), DEBUG_ON);
+  log("Clearing positions for motorId(s): " + String((int)motorId),  DEBUG_CHATTY);
   issueMotorCommand(CLRP, motorId);
 }
 
@@ -367,12 +355,12 @@ void setOrientationAsReversed(byte motorId) {
 }
 
 void setSpeedRampRate(byte motorId, byte rampSpeed) {
-  log("Setting speed ramp rate for motorId(s): " + String((int)motorId) + " to: " + String((int)rampSpeed), DEBUG_ON);
+  log("Setting speed ramp rate for motorId(s): " + String((int)motorId) + " to: " + String((int)rampSpeed),  DEBUG_CHATTY);
   issueMotorCommand(SSRR, motorId, rampSpeed);
 }
 
 void setSpeedMaximum(byte motorId, int maximumSpeed) {
-  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed), DEBUG_ON);
+  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed),  DEBUG_CHATTY);
   issueMotorCommand(SMAX, motorId, maximumSpeed);
 }
 
@@ -542,10 +530,5 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
-
-
-
-
-
 
 

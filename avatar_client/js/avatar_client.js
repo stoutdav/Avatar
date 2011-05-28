@@ -6,14 +6,6 @@ var STOP_CHAR = "?";
 var COLLISION_WARNING = "W";
 var DEBUG_MESSAGE = "#";
 
-// Sending messages
-// Command constants. Must match constants in arduino avatar.pde file
-var FORWARD = 'f';
-var REVERSE = 'b';
-var RIGHT = 'r';
-var LEFT = 'l';
-var EMERGENCY_STOP = 'S';
-
 // Parameter constants. Must match constants in arduino avatar.pde file. Also used when setting a param in GUI
 var RAMP_SPEED = 'A'; //A for acceleration
 var MAXIMUM_SPEEP = 'M';
@@ -23,8 +15,10 @@ var ROTATION_DISTANCE = 'R';
 var COLLISION_DISTANCE = 'C';
 var RESET = 'T';
 
-var READ_PARAM = 'P'; // Used when requesting a parameter value
-var READ_ALL_PARAMS = 'Y';  // Used when requesting all parameter values
+var SEND_ALL_PARAMS = 'Y';  // Used when requesting all parameter values
+
+var JOYSTICK = 'j';
+var POSITION = 'x';
 
 var SET_DEBUG = 'D';
 var DEBUG_OFF = '0';
@@ -37,6 +31,11 @@ socket.connect();
 socket.on('connect', function() {
     console.log("Client: Client connected to server");
 });
+
+socket.on('disconnect', function() {
+    console.log("Client: Client disconnected from server");
+});
+
 socket.on('message', function(data) {
     // Need to build message because it comes back in chunks
     for (var i = 0; i < data.length; i++) {
@@ -72,11 +71,6 @@ function getNextMessageFromBuffer() {
     }
     return message;
 }
-
-socket.on('disconnect', function() {
-    console.log("Client: Client disconnected from server");
-});
-
 function handleMessageFromServer(code) {
     var message;
     var messageType = code[0];
@@ -128,12 +122,31 @@ function handleMessageFromServer(code) {
     }
     console.log("Client: Received message from server", message);
 }
-$(function() {
 
+function sendJoystickPosition(x, y) {
+    sendMessageToServer(JOYSTICK + x + POSITION + y);
+}
+
+function sendMessageToServer(message) {
+    socket.send(START_CHAR + message + STOP_CHAR);
+}
+
+$(function() {
     $("#joystick").draggable({
                 revert:true,
                 containment: "parent",
-
+                create: function() {
+                    $(this).data("startLeft", parseInt($(this).css("left")));
+                    $(this).data("startTop", parseInt($(this).css("top")));
+                },
+                drag: function(event, ui) {
+                    var x = ui.position.left - parseInt($(this).data("startLeft"));
+                    var y = -(ui.position.top - parseInt($(this).data("startTop")));
+                    sendJoystickPosition(x, y);
+                },
+                stop: function(event, ui) {
+                    sendJoystickPosition(0,0);
+                }
             });
 
     $("#debug").buttonset();
@@ -264,13 +277,5 @@ $(function() {
     $("#frontSensor").val($("#frontSensorSlider").slider("value"));
 
 // Once gui is setup get actual values from arduino
-    sendMessageToServer(READ_ALL_PARAMS);
-
-})
-        ;
-
-function sendMessageToServer(message) {
-    socket.send(START_CHAR + message + STOP_CHAR);
-}
-
-
+    sendMessageToServer(SEND_ALL_PARAMS);
+});

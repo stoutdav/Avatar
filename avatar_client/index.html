@@ -17,15 +17,15 @@
     </div>
 
     <div class="prepend-4 span-8 append-12 last">
-        <div id="joystickPort">
+        <div id="joystickView">
             <div id="joystick" class="ui-widget-content"><p></p></div>
         </div>
     </div>
 
     <div class="span-24">
         <br>
-
     </div>
+
     <div class="span-7">
         <div id="debug">
             Debug:
@@ -39,48 +39,45 @@
         <button id="sliders">Show Controls</button>
     </div>
 
-
     <div id="debugPopout">
         <p id="debugOutput" class="debugOutput"></p>
     </div>
 
     <div id="slidersPopout">
         <label for="rampSpeed">Ramp speed:</label>
-        <input type="text" id="rampSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+        <input readonly="true" class="sliderValue" type="text" id="rampSpeed"/>
 
         <div id="rampSpeedSlider"></div>
 
         <label for="maxSpeed">Max speed:</label>
-        <input type="text" id="maxSpeed" style="border:0; color:#f6931f; font-weight:bold;"/>
+        <input readonly="true" class="sliderValue" type="text" id="maxSpeed"/>
 
         <div id="maxSpeedSlider"></div>
 
         <label for="forwardDistance">Forward distance:</label>
-        <input type="text" id="forwardDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+        <input readonly="true" class="sliderValue" type="text" id="forwardDistance"/>
 
         <div id="forwardDistanceSlider"></div>
 
         <label for="reverseDistance">Reverse distance:</label>
-        <input type="text" id="reverseDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+        <input readonly="true" class="sliderValue" type="text" id="reverseDistance"/>
 
         <div id="reverseDistanceSlider"></div>
 
         <label for="rotationDistance">Rotation distance:</label>
-        <input type="text" id="rotationDistance" style="border:0; color:#f6931f; font-weight:bold;"/>
+        <input readonly="true" class="sliderValue" type="text" id="rotationDistance"/>
 
         <div id="rotationDistanceSlider"></div>
 
         <label for="frontSensor">Front sensor (cm):</label>
-        <input type="text" id="frontSensor" style="border:0; color:#f6931f; font-weight:bold;"/>
+        <input readonly="true" class="sliderValue" type="text" id="frontSensor"/>
 
         <div id="frontSensorSlider"></div>
 
         <button id="reset">Reset</button>
 
     </div>
-
 </div>
-
 
 <script type="text/javascript" src="js/socket.io.js"></script>
 <script type="text/javascript" src="js/jquery-1.5.1.min.js"></script>
