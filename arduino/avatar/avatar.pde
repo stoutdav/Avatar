@@ -109,6 +109,28 @@ void loop() {
   delay(100); // delay is necessary or Ping doesn't seem to work properly
 }
 
+String getSerialInput() {
+  char command[8]; // 8 char commands + string end. 9 Chars total
+  delay(100); // Give the buffer a chance to fill up
+  char val = Serial.read();
+  if (val == START_CHAR) {
+    log("Start Char Rcvd", DEBUG_CHATTY);
+    int charsRead = 0;
+    while (Serial.available()) {
+      val = Serial.read();
+      if (val == STOP_CHAR) {
+        log("Stop Char Rcvd", DEBUG_CHATTY);
+        command[charsRead++] = '\0';
+        log("Received Command: " + String(command), DEBUG_CHATTY);
+        return command;
+      }
+      command[charsRead] = val;
+      charsRead++;
+    }
+  }
+  return command;
+}
+
 void setupMotorControl() {
   // Init soft UART. Controller boards operate at 19.2kbits/sec
   MotorSerial.begin(19200);
@@ -237,28 +259,6 @@ void checkForForwardCollision() {
 
 boolean hasForwardMotion() {
   return getSpeed(LeftMotor) * getSpeed(RightMotor) > 0;
-}
-
-String getSerialInput() {
-  char command[8]; // 8 char commands + string end. 9 Chars total
-  delay(100); // Give the buffer a chance to fill up
-  char val = Serial.read();
-  if (val == START_CHAR) {
-    log("Start Char Rcvd", DEBUG_CHATTY);
-    int charsRead = 0;
-    while (Serial.available()) {
-      val = Serial.read();
-      if (val == STOP_CHAR) {
-        log("Stop Char Rcvd", DEBUG_CHATTY);
-        command[charsRead++] = '\0';
-        log("Received Command: " + String(command), DEBUG_CHATTY);
-        return command;
-      }
-      command[charsRead] = val;
-      charsRead++;
-    }
-  }
-  return command;
 }
 
 void performCommand(String command) {

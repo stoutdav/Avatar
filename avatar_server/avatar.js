@@ -85,13 +85,13 @@ var socket = io.listen(server);
 var webClient;
 
 socket.on('connection', function (client) {
-    console.log("Server: Client connected to server");
+    console.log("Client connected to server");
     client.on('message', function (event) {
-        console.log("Server: Received message from client", event);
+        console.log("Received message from client", event);
         sp.write(event);
     });
     client.on('disconnect', function () {
-        console.log("Server: Client has disconnected");
+        console.log("Client has disconnected");
     });
     webClient = client;
 });
@@ -104,9 +104,7 @@ sp.on('data', function (data) {
     // Wait for a connection before trying to send responses
     if (webClient) {
         var message = new String(data);
-        console.log("Server: Sending a message: " + message);
+        console.log("Sending a message to client: " + message);
         webClient.send(message);
     }
 });
-	
-	 
