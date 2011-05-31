@@ -97,7 +97,7 @@ socket.on('connection', function (client) {
 });
 var sp = new serialport.SerialPort(serialPort, {
             parser : serialport.parsers.raw,
-            baudrate : 9600
+            baudrate : 115200
         });
 
 sp.on('data', function (data) {
@@ -107,4 +107,8 @@ sp.on('data', function (data) {
         console.log("Sending a message to client: " + message);
         webClient.send(message);
     }
+});
+
+sp.on("error", function (msg) {
+    conesole.log("Serial error: " + msg);
 });

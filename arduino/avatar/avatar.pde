@@ -93,7 +93,7 @@ void setup() {
 }
 
 void setupPcInterface() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.flush();
 }
 
@@ -116,7 +116,7 @@ String getSerialInput() {
   if (val == START_CHAR) {
     log("Start Char Rcvd", DEBUG_CHATTY);
     int charsRead = 0;
-    while (Serial.available()) {
+    while (Serial.available() && charsRead < 8) {
       val = Serial.read();
       if (val == STOP_CHAR) {
         log("Stop Char Rcvd", DEBUG_CHATTY);
