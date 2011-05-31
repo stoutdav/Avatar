@@ -99,18 +99,25 @@ void setupPcInterface() {
 
 void loop() {
   checkForForwardCollision();
-  if (Serial.available()) {
-    String serialCommand = getSerialInput();
-    if (serialCommand > 0) {
-      log("Serial command received: " + String(serialCommand), DEBUG_CHATTY);
-      performCommand(serialCommand);
-    }
+  String serialCommand = getSerialInput();
+  if (serialCommand != "") {
+    log("Serial command received: " + String(serialCommand), DEBUG_CHATTY);
+    performCommand(serialCommand);
   }
+
   delay(100); // delay is necessary or Ping doesn't seem to work properly
 }
 
 String getSerialInput() {
-  char command[8]; // 8 char commands + string end. 9 Chars total
+  if (!Serial.available()) {
+    return "";
+  }
+
+  if (Serial.peek() != START_CHAR) {
+    return "";
+  }
+  // Initialize with null char so string always terminated
+  char command[255] = {\0'}; 
   delay(100); // Give the buffer a chance to fill up
   char val = Serial.read();
   if (val == START_CHAR) {
@@ -120,7 +127,6 @@ String getSerialInput() {
       val = Serial.read();
       if (val == STOP_CHAR) {
         log("Stop Char Rcvd", DEBUG_CHATTY);
-        command[charsRead++] = '\0';
         log("Received Command: " + String(command), DEBUG_CHATTY);
         return command;
       }
@@ -128,7 +134,8 @@ String getSerialInput() {
       charsRead++;
     }
   }
-  return command;
+  // We got a START_CHAR but not a STOP_CHAR. Throw it all away.
+  return "";
 }
 
 void setupMotorControl() {
@@ -530,5 +537,3 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
-
-
