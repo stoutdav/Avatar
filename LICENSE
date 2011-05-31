@@ -1,7 +1,7 @@
 Blueprint
 jquery
 jquery-ui
-node.js
+node.js  0.48
 socket.io
 arduino
 Newsoftserial
