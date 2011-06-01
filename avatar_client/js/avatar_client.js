@@ -8,8 +8,7 @@ var DEBUG_MESSAGE = "#";
 
 // Parameter constants. Must match constants in arduino avatar.pde file. Also used when setting a param in GUI
 var RAMP_SPEED = 'A'; //A for acceleration
-var MAXIMUM_SPEEP = 'M';
-var FORWARD_DISTANCE = 'F';
+var DISTANCE = 'F';
 var REVERSE_DISTANCE = 'B';
 var ROTATION_DISTANCE = 'R';
 var COLLISION_DISTANCE = 'C';
@@ -91,20 +90,10 @@ function handleMessageFromServer(code) {
             $("#rampSpeed").val(param);
             message = "Set ramp speed to " + param;
             break;
-        case MAXIMUM_SPEEP:
-            $("#maxSpeedSlider").slider("value", param);
-            $("#maxSpeed").val(param);
-            message = "Set maximum speed to " + param;
-            break;
-        case FORWARD_DISTANCE:
-            $("#forwardDistanceSlider").slider("value", param);
-            $("#forwardDistance").val(param);
-            message = "Set forward distance to " + param;
-            break;
-        case REVERSE_DISTANCE:
-            $("#reverseDistanceSlider").slider("value", param);
-            $("#reverseDistance").val(param);
-            message = "Set reverse distance to " + param;
+        case DISTANCE:
+            $("#distanceSlider").slider("value", param);
+            $("#distance").val(param);
+            message = "Set distance to " + param;
             break;
         case ROTATION_DISTANCE:
             $("#rotationDistanceSlider").slider("value", param);
@@ -125,8 +114,8 @@ function handleMessageFromServer(code) {
 
 function sendJoystickPosition(x, y) {
     // 80 comes from avatar.css
-    var xScaled = Math.round((x/80) * 10);
-    var yScaled = Math.round((y/80) * 10);
+    var xScaled = Math.round((x / 80) * 10);
+    var yScaled = Math.round((y / 80) * 10);
     sendMessageToServer(JOYSTICK + xScaled + POSITION + yScaled);
 }
 
@@ -148,7 +137,7 @@ $(function() {
                     sendJoystickPosition(x, y);
                 },
                 stop: function(event, ui) {
-                    sendJoystickPosition(0,0);
+                    sendJoystickPosition(0, 0);
                 }
             });
 
@@ -209,53 +198,25 @@ $(function() {
             });
     $("#rampSpeed").val($("#rampSpeedSlider").slider("value"));
 
-    $("#maxSpeedSlider").slider({
+    $("#distanceSlider").slider({
                 range: "min",
                 min: 1,
-                max: 100,
-                value: 36,
+                max: 20,
+                value: 3,
                 slide: function(event, ui) {
-                    $("#maxSpeed").val(ui.value);
+                    $("#distance").val(ui.value);
                 },
                 stop: function(event, ui) {
-                    sendMessageToServer(MAXIMUM_SPEEP + ui.value);
+                    sendMessageToServer(DISTANCE + ui.value);
                 }
             });
-    $("#maxSpeed").val($("#maxSpeedSlider").slider("value"));
-
-    $("#forwardDistanceSlider").slider({
-                range: "min",
-                min: 1,
-                max: 100,
-                value: 20,
-                slide: function(event, ui) {
-                    $("#forwardDistance").val(ui.value);
-                },
-                stop: function(event, ui) {
-                    sendMessageToServer(FORWARD_DISTANCE + ui.value);
-                }
-            });
-    $("#forwardDistance").val($("#forwardDistanceSlider").slider("value"));
-
-    $("#reverseDistanceSlider").slider({
-                range: "min",
-                min: 1,
-                max: 100,
-                value: 10,
-                slide: function(event, ui) {
-                    $("#reverseDistance").val(ui.value);
-                },
-                stop: function(event, ui) {
-                    sendMessageToServer(REVERSE_DISTANCE + ui.value);
-                }
-            });
-    $("#reverseDistance").val($("#reverseDistanceSlider").slider("value"));
+    $("#distance").val($("#distanceSlider").slider("value"));
 
     $("#rotationDistanceSlider").slider({
                 range: "min",
                 min: 1,
-                max: 50,
-                value: 5,
+                max: 20,
+                value: 3,
                 slide: function(event, ui) {
                     $("#rotationDistance").val(ui.value);
                 },

@@ -54,22 +54,17 @@ const char DEBUG_MESSAGE = '#'; // takes 3 chars representing distance in cms
 
 // Character Constants for parameter setting commands and params for reading commands. Used in getting/setting over serial
 const char RAMP_SPEED = 'A'; //A for acceleration
-const char MAXIMUM_SPEED = 'M';
-const char FORWARD_DISTANCE = 'F';
-const char REVERSE_DISTANCE = 'B';
+const char DISTANCE = 'F';
 const char ROTATION_DISTANCE = 'R';
 const char COLLISION_DISTANCE ='C';
 const char RESET = 'T';
 
-// Parameter Defaults for incremental travel
-const unsigned int DefaultForwardDistance = 20; // 32767 is max
-const unsigned int DefaultReverseDistance = 10;  // 32767 is max
-const unsigned int DefaultRotationDistance = 5; // 32767 is max
+// Parameter Defaults
+const unsigned int DefaultDistance = 3;
+const unsigned int DefaultRotationDistance = 3;
 const int DefaultFrontCollisionDistance = 5; // in centimeters;
-
 // According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
 const byte DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default. 255 is max
-const unsigned int DefaultMaximumSpeed = 36; // 2 positions per .5 second. 36 is the default;  65535 is max
 
 // Debug and logging constants and variables
 const char SET_DEBUG = 'D'; // followed by debug level of 0, 1, 2
@@ -80,9 +75,7 @@ int debugLevel = DEBUG_OFF;
 
 // Configurable Parameters
 byte rampSpeed;
-unsigned int maximumSpeed;
-unsigned int forwardDistance;
-unsigned int reverseDistance;
+unsigned int distance;
 unsigned int rotationDistance;
 int frontCollisionDistance;
 
@@ -118,7 +111,7 @@ String getSerialInput() {
   }
   // Initialize with null char so string always terminated
   char command[255] = {
-    '\0'  }; 
+    '\0'  };
   delay(100); // Give the buffer a chance to fill up
   char val = Serial.read();
   if (val == START_CHAR) {
@@ -151,9 +144,6 @@ void setupMotorControl() {
 
   // Set speed ramp rate (acceleration/deceleration)
   setSpeedRampRate();
-
-  // Set maximum speed
-  setSpeedMaximum();
 }
 
 // Parameter setting
@@ -164,18 +154,8 @@ void setRampSpeed(byte param) {
   setSpeedRampRate();
 };
 
-void setMaximumSpeed(unsigned int param) {
-  smoothStop();
-  maximumSpeed = param;
-  setSpeedMaximum();
-};
-
-void setForwardDistance(unsigned int param) {
-  forwardDistance = param;
-};
-
-void setReverseDistance(unsigned int param) {
-  reverseDistance = param;
+void setDistance(unsigned int param) {
+  distance = param;
 };
 
 void setRotationDistance(unsigned int param) {
@@ -191,10 +171,6 @@ void setSpeedRampRate() {
   setSpeedRampRate(BothMotors, rampSpeed);
 }
 
-void setSpeedMaximum() {
-  setSpeedMaximum(BothMotors, maximumSpeed);
-}
-
 void setDebug(int param) {
   debugLevel = param;
 }
@@ -205,14 +181,8 @@ void sendParam(char param) {
   case RAMP_SPEED:
     sendParam(RAMP_SPEED, rampSpeed);
     break;
-  case MAXIMUM_SPEED:
-    sendParam(MAXIMUM_SPEED, maximumSpeed);
-    break;
-  case FORWARD_DISTANCE:
-    sendParam(FORWARD_DISTANCE, forwardDistance);
-    break;
-  case REVERSE_DISTANCE:
-    sendParam(REVERSE_DISTANCE, reverseDistance);
+  case DISTANCE:
+    sendParam(DISTANCE, distance);
     break;
   case ROTATION_DISTANCE:
     sendParam(ROTATION_DISTANCE, rotationDistance);
@@ -224,11 +194,8 @@ void sendParam(char param) {
 }
 
 void resetParametersToDefaults() {
-
   rampSpeed = DefaultRampSpeed;
-  maximumSpeed = DefaultMaximumSpeed;
-  forwardDistance = DefaultForwardDistance;
-  reverseDistance = DefaultReverseDistance;
+  distance = DefaultDistance;
   rotationDistance = DefaultRotationDistance;
   frontCollisionDistance = DefaultFrontCollisionDistance;
 
@@ -236,9 +203,7 @@ void resetParametersToDefaults() {
 
 void sendAllParams() {
   sendParam(RAMP_SPEED, rampSpeed);
-  sendParam(MAXIMUM_SPEED, maximumSpeed);
-  sendParam(FORWARD_DISTANCE, forwardDistance);
-  sendParam(REVERSE_DISTANCE, reverseDistance);
+  sendParam(DISTANCE, distance);
   sendParam(ROTATION_DISTANCE, rotationDistance);
   sendParam(COLLISION_DISTANCE, frontCollisionDistance);
 }
@@ -277,14 +242,8 @@ void performCommand(String command) {
   case RAMP_SPEED:
     setRampSpeed(param.toInt());
     break;
-  case MAXIMUM_SPEED:
-    setMaximumSpeed(param.toInt());
-    break;
-  case FORWARD_DISTANCE:
-    setForwardDistance(param.toInt());
-    break;
-  case REVERSE_DISTANCE:
-    setReverseDistance(param.toInt());
+  case DISTANCE:
+    setDistance(param.toInt());
     break;
   case ROTATION_DISTANCE:
     setRotationDistance(param.toInt());
@@ -321,8 +280,6 @@ void handleJoystickInput(String param) {
 
 // Motor commands
 void move(int x, int y) {
-  int MAGIC_SPEED_NUMBER = 5; //keep things moving until next loop
-  int MAGIC_TURN_NUMBER = 5; //keep things moving until next loop
   int requestedSpeed = 0;
   int requestedDirection = 0;
   int requestedTurn = 0;
@@ -352,13 +309,13 @@ void move(int x, int y) {
   // Moving
   if (requestedSpeed > 0 && requestedTurn == 0) {
     setSpeedMaximum(BothMotors, requestedSpeed);
-    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * MAGIC_SPEED_NUMBER);
+    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * DefaultDistance);
   };
 
   // Turning
   if (requestedSpeed == 0 && requestedTurn < 0) {
     setSpeedMaximum(BothMotors, requestedTurn);
-    rotatePositions(requestedTurnDirection * requestedTurn * MAGIC_TURN_NUMBER);
+    rotatePositions(requestedTurnDirection * requestedTurn * DefaultRotationDistance);
   };
 
 
@@ -366,7 +323,7 @@ void move(int x, int y) {
   if (requestedSpeed > 0 && requestedTurn > 0) {
     setSpeedMaximum(LeftMotor,requestedSpeed + (requestedTurn * requestedTurnDirection));
     setSpeedMaximum(RightMotor, requestedTurn + (requestedTurn * requestedTurnDirection * -1));
-    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * MAGIC_SPEED_NUMBER);
+    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * DefaultDistance);
   };
 
   //TODO(paul): Handle other conditions?
@@ -591,4 +548,7 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
+
+
+
 
