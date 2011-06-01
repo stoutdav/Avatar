@@ -345,7 +345,7 @@ void rotatePositions(int positions) {
 // Backward if position > 0
 // Approx 1.33 cm per position
 void travelNumberOfPositions(byte motorId, int positions) {
-  log("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId, DEBUG_CHATTY);
+  log("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId, DEBUG_ON);
   issueMotorCommand(TRVL, motorId, positions);
 }
 
@@ -357,7 +357,7 @@ void emergencyStop() {
 
 // Smooth stop with deceleration. Not cumulative.
 void smoothStop() {
-  log("Initiating smooth stop",  DEBUG_CHATTY);
+  log("Initiating smooth stop",  DEBUG_ON);
   travelNumberOfPositions(BothMotors, 0);
 }
 
@@ -378,7 +378,7 @@ void setSpeedRampRate(byte motorId, byte rampSpeed) {
 }
 
 void setSpeedMaximum(byte motorId, int maximumSpeed) {
-  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed),  DEBUG_CHATTY);
+  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed),  DEBUG_ON);
   issueMotorCommand(SMAX, motorId, maximumSpeed);
 }
 
