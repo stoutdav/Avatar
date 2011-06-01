@@ -124,7 +124,10 @@ function handleMessageFromServer(code) {
 }
 
 function sendJoystickPosition(x, y) {
-    sendMessageToServer(JOYSTICK + x + POSITION + y);
+    // 80 comes from avatar.css
+    var xScaled = Math.round((x/80) * 10);
+    var yScaled = Math.round((y/80) * 10);
+    sendMessageToServer(JOYSTICK + xScaled + POSITION + yScaled);
 }
 
 function sendMessageToServer(message) {

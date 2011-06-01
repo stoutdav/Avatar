@@ -117,7 +117,8 @@ String getSerialInput() {
     return "";
   }
   // Initialize with null char so string always terminated
-  char command[255] = {\0'}; 
+  char command[255] = {
+    '\0'  }; 
   delay(100); // Give the buffer a chance to fill up
   char val = Serial.read();
   if (val == START_CHAR) {
@@ -314,10 +315,63 @@ void handleJoystickInput(String param) {
   int x = x_string.toInt();
   String y_string =  param.substring(position + 1);
   int y = y_string.toInt();
+  move(x, y);
   log("Received Joystick position x: " + x_string + "y: " + y_string, DEBUG_ON);
 }
 
 // Motor commands
+void move(int x, int y) {
+  int MAGIC_SPEED_NUMBER = 5; //keep things moving until next loop
+  int MAGIC_TURN_NUMBER = 5; //keep things moving until next loop
+  int requestedSpeed = 0;
+  int requestedDirection = 0;
+  int requestedTurn = 0;
+  int requestedTurnDirection = 0;
+  requestedTurn = abs(y);
+  requestedSpeed = abs(x);
+
+  if (x < 0) {
+    requestedDirection = REVERSE_DIRECTION;
+  } 
+  else {
+    requestedDirection = FORWARD_DIRECTION;
+  };
+
+  if (y < 0) {
+    requestedTurnDirection = LEFT_ROTATION;
+  } 
+  else {
+    requestedTurnDirection = RIGHT_ROTATION;
+  };
+
+  // Stopping
+  if (requestedSpeed == 0 && requestedTurn == 0) {
+    smoothStop();
+  };
+
+  // Moving
+  if (requestedSpeed > 0 && requestedTurn == 0) {
+    setSpeedMaximum(BothMotors, requestedSpeed);
+    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * MAGIC_SPEED_NUMBER);
+  };
+
+  // Turning
+  if (requestedSpeed == 0 && requestedTurn < 0) {
+    setSpeedMaximum(BothMotors, requestedTurn);
+    rotatePositions(requestedTurnDirection * requestedTurn * MAGIC_TURN_NUMBER);
+  };
+
+
+  // Turning and moving. Not sure how this will actually work.
+  if (requestedSpeed > 0 && requestedTurn > 0) {
+    setSpeedMaximum(LeftMotor,requestedSpeed + (requestedTurn * requestedTurnDirection));
+    setSpeedMaximum(RightMotor, requestedTurn + (requestedTurn * requestedTurnDirection * -1));
+    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * MAGIC_SPEED_NUMBER);
+  };
+
+  //TODO(paul): Handle other conditions?
+
+}
 
 // Rotate right or left by the number of encoder positions specified. Commands are cumulative.
 // Right if position < 0
@@ -537,3 +591,4 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
+
