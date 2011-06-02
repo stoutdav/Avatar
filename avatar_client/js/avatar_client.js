@@ -38,7 +38,7 @@ socket.on('disconnect', function() {
 socket.on('message', function(data) {
     // Need to build message because it comes back in chunks
     for (var i = 0; i < data.length; i++) {
-        messageBuffer.push(data[i]);
+        messageBuffer.push(String.fromCharCode(data[i]));
     }
     processMessages();
 });
@@ -120,6 +120,7 @@ function sendJoystickPosition(x, y) {
 }
 
 function sendMessageToServer(message) {
+    console.log("Client: Sending message to server - ", message);
     socket.send(START_CHAR + message + STOP_CHAR);
 }
 
@@ -240,6 +241,6 @@ $(function() {
             });
     $("#frontSensor").val($("#frontSensorSlider").slider("value"));
 
-// Once gui is setup get actual values from arduino
+    // Once gui is setup get actual values from arduino
     sendMessageToServer(SEND_ALL_PARAMS);
 });

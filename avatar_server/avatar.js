@@ -86,9 +86,9 @@ var webClient;
 
 socket.on('connection', function (client) {
     console.log("Client connected to server");
-    client.on('message', function (event) {
-        console.log("Received message from client", event);
-        sp.write(event);
+    client.on('message', function (data) {
+        console.log("Received message from client", data);
+        sp.write(data);
     });
     client.on('disconnect', function () {
         console.log("Client has disconnected");
@@ -103,9 +103,8 @@ var sp = new serialport.SerialPort(serialPort, {
 sp.on('data', function (data) {
     // Wait for a connection before trying to send responses
     if (webClient) {
-        var message = new String(data);
-        console.log("Sending a message to client: " + message);
-        webClient.send(message);
+        console.log("Sending a message to client: " + data);
+        webClient.send(data);
     }
 });
 

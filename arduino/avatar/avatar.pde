@@ -35,7 +35,7 @@ const byte NotArrive = 0x00;
 const char START_CHAR = '!';
 const char STOP_CHAR = '?';
 
-// Joystick position. Followed by signed 3 char x position, POSITION delimiter, and 3 char y
+// Joystick position. e.g. j5x-3
 const char JOYSTICK = 'j';
 const char POSITION = 'x';
 
@@ -92,40 +92,38 @@ void setupPcInterface() {
 
 void loop() {
   checkForForwardCollision();
-  String serialCommand = getSerialInput();
-  if (serialCommand != "") {
-    log("Serial command received: " + String(serialCommand), DEBUG_CHATTY);
-    performCommand(serialCommand);
+  if (Serial.available()) {
+    String serialCommand = getSerialInput();
+    if (serialCommand != String("")) {
+      log("Serial command received: " + String(serialCommand), DEBUG_ON);
+      performCommand(serialCommand);
+    }
   }
 
   delay(100); // delay is necessary or Ping doesn't seem to work properly
 }
 
 String getSerialInput() {
-  if (!Serial.available()) {
-    return "";
-  }
 
-  if (Serial.peek() != START_CHAR) {
-    return "";
-  }
   // Initialize with null char so string always terminated
   char command[255] = {
-    '\0'  };
+    '\0'      };
   delay(100); // Give the buffer a chance to fill up
   char val = Serial.read();
   if (val == START_CHAR) {
     log("Start Char Rcvd", DEBUG_CHATTY);
     int charsRead = 0;
-    while (Serial.available() && charsRead < 8) {
+    while (Serial.available()) {
       val = Serial.read();
       if (val == STOP_CHAR) {
         log("Stop Char Rcvd", DEBUG_CHATTY);
         log("Received Command: " + String(command), DEBUG_CHATTY);
-        return command;
+        return String(command);
+      } 
+      else {
+        command[charsRead] = val;
+        charsRead++;
       }
-      command[charsRead] = val;
-      charsRead++;
     }
   }
   // We got a START_CHAR but not a STOP_CHAR. Throw it all away.
@@ -198,7 +196,6 @@ void resetParametersToDefaults() {
   distance = DefaultDistance;
   rotationDistance = DefaultRotationDistance;
   frontCollisionDistance = DefaultFrontCollisionDistance;
-
 }
 
 void sendAllParams() {
@@ -231,13 +228,13 @@ void checkForForwardCollision() {
 }
 
 boolean hasForwardMotion() {
-  return getSpeed(LeftMotor) * getSpeed(RightMotor) > 0;
+  return getSpeed(LeftMotor) > 0 &&  getSpeed(RightMotor) > 0;
 }
 
 void performCommand(String command) {
-  char baseCommand = command[0];
+  char baseCommand = command.charAt(0);
   String param = command.substring(1);
-  log("Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param), DEBUG_ON);
+  log("Arduino command ack: " + command + " Base Command: " + baseCommand + " Param: " + param, DEBUG_ON);
   switch (baseCommand) {
   case RAMP_SPEED:
     setRampSpeed(param.toInt());
@@ -264,22 +261,25 @@ void performCommand(String command) {
     handleJoystickInput(param);
     break;
   default:
-    log("Unknown Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param), DEBUG_OFF);
+    log("Unknown Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param), DEBUG_ON);
   }
 }
 
 void handleJoystickInput(String param) {
+
   int position = param.indexOf(POSITION);
   String x_string = param.substring(0, position);
+  String y_string =  param.substring(position + 1, param.length()  );
+
   int x = x_string.toInt();
-  String y_string =  param.substring(position + 1);
   int y = y_string.toInt();
   move(x, y);
-  log("Received Joystick position x: " + x_string + "y: " + y_string, DEBUG_ON);
+  log("Received Joystick position x: " + String(x) + " y: " + String(y), DEBUG_ON);
 }
 
 // Motor commands
 void move(int x, int y) {
+  log("Moving: " + String(x) + " y: " + String(y), DEBUG_ON);
   int requestedSpeed = 0;
   int requestedDirection = 0;
   int requestedTurn = 0;
@@ -548,6 +548,16 @@ void sendWarning(String returnCode, String params) {
   Serial.print(params);
   Serial.print(STOP_CHAR);
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
