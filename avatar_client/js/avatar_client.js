@@ -1,25 +1,20 @@
 // Globals
-var START_CHAR = "!";
-var STOP_CHAR = "?";
+var FIELD_SEPARATOR = ",";
+var COMMAND_SEPARATOR = ";";
 
-//Constants
+
 var COLLISION_WARNING = "W";
 var DEBUG_MESSAGE = "#";
 
-// Parameter constants. Must match constants in arduino avatar.pde file. Also used when setting a param in GUI
-var RAMP_SPEED = 'A'; //A for acceleration
-var DISTANCE = 'F';
-var REVERSE_DISTANCE = 'B';
-var ROTATION_DISTANCE = 'R';
-var COLLISION_DISTANCE = 'C';
-var RESET = 'T';
+var SEND_ALL_PARAMS = 11;  // Used when requesting all parameter values
+var JOYSTICK = 12;
+var SET_DEBUG = 13;
+var RAMP_SPEED = 14;
+var COLLISION_DISTANCE = 15;
+var ROTATION_DISTANCE = 16;
+var MOTION_MULTIPLIER = 17;
+var RESET = 18;
 
-var SEND_ALL_PARAMS = 'Y';  // Used when requesting all parameter values
-
-var JOYSTICK = 'j';
-var POSITION = 'x';
-
-var SET_DEBUG = 'D';
 var DEBUG_OFF = '0';
 var DEBUG_ON = '1';
 
@@ -44,14 +39,12 @@ socket.on('message', function(data) {
 });
 
 function processMessages() {
-    var indexOfStartChar = messageBuffer.indexOf(START_CHAR);
-    var indexOfStopChar = messageBuffer.indexOf(STOP_CHAR);
+    var indexOfCommandSeparator = messageBuffer.indexOf(COMMAND_SEPARATOR);
 
-    while (indexOfStartChar != -1 && indexOfStopChar != -1) {
+    while (indexOfCommandSeparator != -1) {
         var message = getNextMessageFromBuffer();
         handleMessageFromServer(message);
-        indexOfStartChar = messageBuffer.indexOf(START_CHAR);
-        indexOfStopChar = messageBuffer.indexOf(STOP_CHAR);
+        indexOfCommandSeparator = messageBuffer.indexOf(COMMAND_SEPARATOR);
     }
 }
 
@@ -59,69 +52,72 @@ function getNextMessageFromBuffer() {
     var message = [];
     var length = messageBuffer.length;
     for (var i = 0; i < length; i++) {
-        var nextChar = messageBuffer.shift();
-        if (nextChar == STOP_CHAR) {
-            break;
-        }
-        if (nextChar == START_CHAR) {
-            continue;
-        }
-        message.push(nextChar);
+        message.push(messageBuffer.shift());
     }
     return message;
 }
-function handleMessageFromServer(code) {
-    var message;
-    var messageType = code[0];
-    var param = (code.splice(1, code.length - 1)).join("");
-    switch (messageType) {
+function handleMessageFromServer(message) {
+    var logMessage;
+    var messageId = message.shift();
+    var params = new Array();
+    for (var i = 0; i < message.length; i++) {
+        params.push(message.shift());
+    }
+
+    switch (messageId) {
         case COLLISION_WARNING:
-            message = "Collision warning. Front sensor is " + param + " cm from object.";
+            logMessage = "Collision warning. Front sensor is " + params[0] + " cm from object.";
             $("#messages").prepend("<br>");
-            $("#messages").prepend(message);
+            $("#messages").prepend(logMessage);
             break;
         case DEBUG_MESSAGE:
             $("#debugOutput").prepend("<br>");
-            $("#debugOutput").prepend(param);
-            message = param;
+            $("#debugOutput").prepend(params[0]);
+            logMessage = params[0];
             break;
         case RAMP_SPEED:
-            $("#rampSpeedSlider").slider("value", param);
-            $("#rampSpeed").val(param);
-            message = "Set ramp speed to " + param;
+            $("#rampSpeedSlider").slider("value", params[0]);
+            $("#rampSpeed").val(params[0]);
+            logMessage = "Set ramp speed to " + params[0];
             break;
-        case DISTANCE:
-            $("#distanceSlider").slider("value", param);
-            $("#distance").val(param);
-            message = "Set distance to " + param;
+        case MOTION_MULTIPLIER:
+            $("#motionMultiplierSlider").slider("value", params[0]);
+            $("#motionMultiplier").val(params[0]);
+            logMessage = "Set motion multiplier to " + params[0];
             break;
         case ROTATION_DISTANCE:
-            $("#rotationDistanceSlider").slider("value", param);
-            $("#rotationDistance").val(param);
-            message = "Set rotation distance to " + param;
+            $("#rotationDistanceSlider").slider("value", params[0]);
+            $("#rotationDistance").val(params[0]);
+            logMessage = "Set rotation distance to " + params[0];
             break;
         case COLLISION_DISTANCE:
-            $("#frontSensorSlider").slider("value", param);
-            $("#frontSensor").val(param);
-            message = "Set front sensor distance to " + param;
+            $("#frontSensorSlider").slider("value", params[0]);
+            $("#frontSensor").val(params[0]);
+            logMessage = "Set front sensor distance to " + params[0];
             break;
         default:
-            message = "Unknown Message"
+            logMessage = "Unknown Message"
 
     }
-    console.log("Client: Received message from server", message);
+    console.log("Client: Received message from server", logMessage);
 }
 
 function sendJoystickPosition(x, y) {
     // 80 comes from avatar.css
     var xScaled = Math.round((x / 80) * 10);
     var yScaled = Math.round((y / 80) * 10);
-    sendMessageToServer(JOYSTICK + xScaled + POSITION + yScaled);
+    sendMessageToServer(JOYSTICK, new Array(xScaled,yScaled));
 }
 
-function sendMessageToServer(message) {
-    console.log("Client: Sending message to server - ", message);
-    socket.send(START_CHAR + message + STOP_CHAR);
+function sendMessageToServer(command, fields) {
+    console.log("Client Sending message to server command:", command, " params: ", fields.toString());
+    var message = command;
+    for (var i = 0; i < fields.length; i++) {
+        message += FIELD_SEPARATOR;
+        message += fields[i];
+    }
+    message += COMMAND_SEPARATOR;
+    socket.send(message);
 }
 
 $(function() {
@@ -147,7 +143,7 @@ $(function() {
         var checkedValue = $("input[name=debug]:checked").val();
         $("#debugPopout").dialog("open");
 
-        sendMessageToServer(SET_DEBUG + checkedValue);
+        sendMessageToServer(SET_DEBUG, new Array(checkedValue));
     });
 
     $("#debugPopout").dialog({
@@ -159,7 +155,7 @@ $(function() {
                 close: function(event, ui) {
                     $("input[name=debug][value=0]").attr("checked", true);
                     $("#debug").buttonset("refresh");
-                    sendMessageToServer(SET_DEBUG + DEBUG_OFF);
+                    sendMessageToServer(SET_DEBUG, new Array(DEBUG_OFF));
                 }
             });
 
@@ -181,7 +177,7 @@ $(function() {
 
     $("#reset").button();
     $("#reset").click(function() {
-        sendMessageToServer(RESET)
+        sendMessageToServer(RESET, new Array());
     });
 
 // The default values for each slider should match what's in the arduino avatar.pde file
@@ -194,24 +190,24 @@ $(function() {
                     $("#rampSpeed").val(ui.value);
                 },
                 stop: function(event, ui) {
-                    sendMessageToServer(RAMP_SPEED + ui.value);
+                    sendMessageToServer(RAMP_SPEED, [ui.value]);
                 }
             });
     $("#rampSpeed").val($("#rampSpeedSlider").slider("value"));
 
-    $("#distanceSlider").slider({
+    $("#motionMultiplierSlider").slider({
                 range: "min",
                 min: 1,
                 max: 20,
                 value: 3,
                 slide: function(event, ui) {
-                    $("#distance").val(ui.value);
+                    $("#motionMultiplier").val(ui.value);
                 },
                 stop: function(event, ui) {
-                    sendMessageToServer(DISTANCE + ui.value);
+                    sendMessageToServer(MOTION_MULTIPLIER, [ui.value]);
                 }
             });
-    $("#distance").val($("#distanceSlider").slider("value"));
+    $("#motionMultiplier").val($("#motionMultiplierSlider").slider("value"));
 
     $("#rotationDistanceSlider").slider({
                 range: "min",
@@ -222,7 +218,7 @@ $(function() {
                     $("#rotationDistance").val(ui.value);
                 },
                 stop: function(event, ui) {
-                    sendMessageToServer(ROTATION_DISTANCE + ui.value);
+                    sendMessageToServer(ROTATION_DISTANCE, [ui.value]);
                 }
             });
     $("#rotationDistance").val($("#rotationDistanceSlider").slider("value"));
@@ -236,11 +232,11 @@ $(function() {
                     $("#frontSensor").val(ui.value);
                 },
                 stop: function(event, ui) {
-                    sendMessageToServer(COLLISION_DISTANCE + ui.value);
+                    sendMessageToServer(COLLISION_DISTANCE, [ui.value]);
                 }
             });
     $("#frontSensor").val($("#frontSensorSlider").slider("value"));
 
     // Once gui is setup get actual values from arduino
-    sendMessageToServer(SEND_ALL_PARAMS);
+    sendMessageToServer(SEND_ALL_PARAMS, new Array());
 });

@@ -1,0 +1,15 @@
+Blueprint
+jquery
+jquery-ui
+node.js  0.48
+socket.io
+arduino
+
+Serialport
+js-opts
+
+Arduino
+CmdMessenger - https://github.com/dreamcat4/CmdMessenger
+Streaming - http://arduiniana.org/libraries/streaming/
+Base64 - https://github.com/adamvr/arduino-base64
+Newsoftserial

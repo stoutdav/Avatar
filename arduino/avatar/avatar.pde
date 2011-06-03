@@ -5,6 +5,9 @@
 // 4 - Front Ping Sensor
 
 #include <NewSoftSerial.h>
+#include <CmdMessenger.h>
+#include <Base64.h>
+#include <Streaming.h>
 
 // Pin definitions
 #define MOTOR_TX_RX_PIN 3
@@ -31,13 +34,41 @@ const byte BothMotors = 0x00;    //ID for both motrs
 const byte Arrived = 0xFF;
 const byte NotArrive = 0x00;
 
-// Character constants for serial interface
-const char START_CHAR = '!';
-const char STOP_CHAR = '?';
+// Serial interface
+const char FIELD_SEPARATOR = ',';
+const char COMMAND_SEPARATOR = ';';
+CmdMessenger cmdMessenger = CmdMessenger(Serial, FIELD_SEPARATOR, COMMAND_SEPARATOR);
 
-// Joystick position. e.g. j5x-3
-const char JOYSTICK = 'j';
-const char POSITION = 'x';
+// Commands sent to PC
+enum
+{
+  COMM_ERROR    = 0, // Lets Arduino report serial port comm error back to the PC (only works for some comm errors)
+  ACK           = 1, // Arduino acknowledges cmd was received
+  AVATAR_READY = 2, // After opening the comm port, send this cmd 02 from PC to check arduino is ready
+  ERR           = 3, // Arduino reports badly formatted cmd, or cmd not recognised
+  DEBUG_MESSAGE  = 4,
+  FRONT_COLLISION  = 5,
+  RAMP_SPEED    = 6, //A for acceleration
+  MOTION_MULTIPLIER      = 7,
+  ROTATION_DISTANCE = 8,
+  COLLISION_DISTANCE = 9,
+  RESET        = 10,
+  SEND_CMDS_END,
+};
+
+// Commands received and handled by arduino
+messengerCallbackFunction messengerCallbacks[] =
+{
+  sendAllParams, //11
+  joystick,      //12
+  setDebugLevel, //13
+  setRampSpeed, //14
+  setFrontSensorDistance, //15
+  setRotationDistance, //16
+  setMotionMultiplier, //17
+  reset, //18
+  NULL
+};
 
 // Constants to represent the direction of motion
 const int FORWARD_DIRECTION = -1;
@@ -45,89 +76,156 @@ const int REVERSE_DIRECTION = 1;
 const int LEFT_ROTATION = 1;
 const int RIGHT_ROTATION = -1;
 
-// Used by client to request certain info from Arduino
-const char SEND_ALL_PARAMS = 'Y';
-
-// Character constants for return codes back to server
-const char COLLISION_WARNING = 'W'; // takes 3 chars representing distance in cms
-const char DEBUG_MESSAGE = '#'; // takes 3 chars representing distance in cms
-
-// Character Constants for parameter setting commands and params for reading commands. Used in getting/setting over serial
-const char RAMP_SPEED = 'A'; //A for acceleration
-const char DISTANCE = 'F';
-const char ROTATION_DISTANCE = 'R';
-const char COLLISION_DISTANCE ='C';
-const char RESET = 'T';
-
-// Parameter Defaults
-const unsigned int DefaultDistance = 3;
-const unsigned int DefaultRotationDistance = 3;
-const int DefaultFrontCollisionDistance = 5; // in centimeters;
-// According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
-const byte DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default. 255 is max
-
-// Debug and logging constants and variables
-const char SET_DEBUG = 'D'; // followed by debug level of 0, 1, 2
+// Debug Constants
 const char DEBUG_OFF = 0;
 const char DEBUG_ON = 1;
 const char DEBUG_CHATTY = 2;
+
+// Parameter Defaults
+const unsigned int DefaultMotionMultiplier = 3; //Used to keep motors moving between commands since the Position Controller is used
+const unsigned int DefaultRotationDistance = 3;
+const int DefaultFrontSensorDistance = 5; // in centimeters;
+// According to Parallax documentation position controller have 36 positions per rotation or .5" of linear travel with 6" tires
+const byte DefaultRampSpeed = 15; // 5 positions per .25 sec for acceleration/deceleration for the beginning/end of travel. 15 is the default. 255 is max
 int debugLevel = DEBUG_OFF;
 
 // Configurable Parameters
 byte rampSpeed;
-unsigned int distance;
+unsigned int motionMultiplier;
 unsigned int rotationDistance;
-int frontCollisionDistance;
+int frontSensorDistance;
 
 void setup() {
-  resetParametersToDefaults();
   setupPcInterface();
+  resetParametersToDefaults();
   setupMotorControl();
 }
 
 void setupPcInterface() {
-  Serial.begin(115200);
-  Serial.flush();
+  Serial.begin(115200);   
+  cmdMessenger.attach(AVATAR_READY, avatarReady);
+  cmdMessenger.attach(unknownCmd);
+
+  // Attach user-defined callback methods
+  attachCallbacks(messengerCallbacks);
+  avatarReady();
+}
+
+void attachCallbacks(messengerCallbackFunction* callbacks) {
+  int i = 0;
+  int offset = SEND_CMDS_END;
+  while(callbacks[i]) {
+    cmdMessenger.attach(offset+i, callbacks[i]);
+    i++;
+  }
 }
 
 void loop() {
   checkForForwardCollision();
-  if (Serial.available()) {
-    String serialCommand = getSerialInput();
-    if (serialCommand != String("")) {
-      log("Serial command received: " + String(serialCommand), DEBUG_ON);
-      performCommand(serialCommand);
-    }
-  }
-
+  cmdMessenger.feedinSerialData();
   delay(100); // delay is necessary or Ping doesn't seem to work properly
 }
 
-String getSerialInput() {
+// Callbacks for handling commands from PC
+void avatarReady() {
+  cmdMessenger.sendCmd(ACK,"Avatar ready");
+}
 
-  // Initialize with null char so string always terminated
-  char command[255] = {
-    '\0'      };
-  delay(100); // Give the buffer a chance to fill up
-  char val = Serial.read();
-  if (val == START_CHAR) {
-    log("Start Char Rcvd", DEBUG_CHATTY);
-    int charsRead = 0;
-    while (Serial.available()) {
-      val = Serial.read();
-      if (val == STOP_CHAR) {
-        log("Stop Char Rcvd", DEBUG_CHATTY);
-        log("Received Command: " + String(command), DEBUG_CHATTY);
-        return String(command);
-      } 
-      else {
-        command[charsRead] = val;
-        charsRead++;
-      }
+void unknownCmd() {
+  // Default response for unknown commands and corrupt messages
+  cmdMessenger.sendCmd(ERR,"Unknown command");
+}
+
+void sendAllParams() {
+  cmdMessenger.sendCmd(ACK,"SendAllParams Command Received");
+  doSendAllParams();
+}
+
+void joystick() {
+  cmdMessenger.sendCmd(ACK,"Joystick Command Received");
+  int params[2];
+  int index = 0;
+  while (cmdMessenger.available()) {
+    char buffer[350] = { 
+      '\0'                                                                         };
+    cmdMessenger.copyString(buffer, 350);
+    if(buffer[0]) {
+
+      params[index] = atoi(buffer);
+      index++;
     }
   }
-  // We got a START_CHAR but not a STOP_CHAR. Throw it all away.
-  return "";
+  move(params[0], params[1]);
+}
+
+void setDebugLevel() {
+  cmdMessenger.sendCmd(ACK,"SetDebugLevel Command Received");
+  int params[1];
+  while (cmdMessenger.available()) {
+    char buffer[350] = { 
+      '\0'                                                                         };
+    cmdMessenger.copyString(buffer, 350);
+    if(buffer[0]) {
+      debugLevel = atoi(buffer);
+    }    
+  }
+}
+
+void setRampSpeed() {
+  cmdMessenger.sendCmd(ACK,"SetRampSpeed Command Received");
+  int params[1];
+  while (cmdMessenger.available()) {
+    char buffer[350] = { 
+      '\0'                                                                         };
+    cmdMessenger.copyString(buffer, 350);
+    if(buffer[0]) {
+      setRampSpeed(atoi(buffer));
+    }    
+  }
+}
+
+void setFrontSensorDistance() {
+  cmdMessenger.sendCmd(ACK,"SetFrontSensorDistance Command Received");
+  int params[1];
+  while (cmdMessenger.available()) {
+    char buffer[350] = { 
+      '\0'                                                                         };
+    cmdMessenger.copyString(buffer, 350);
+    if(buffer[0]) {
+      frontSensorDistance = atoi(buffer);
+    }    
+  }
+}
+
+void setRotationDistance() {
+  cmdMessenger.sendCmd(ACK,"SetRotationDistance Command Received");
+  int params[1];
+  while (cmdMessenger.available()) {
+    char buffer[350] = { 
+      '\0'                                                                         };
+    cmdMessenger.copyString(buffer, 350);
+    if(buffer[0]) {
+      rotationDistance = atoi(buffer);
+    }    
+  }
+}
+
+void setMotionMultiplier() {
+  cmdMessenger.sendCmd(ACK,"SetMotionMultiplier Command Received");
+  int params[1];
+  while (cmdMessenger.available()) {
+    char buffer[350] = { 
+      '\0'                                                                         };
+    cmdMessenger.copyString(buffer, 350);
+    if(buffer[0]) {
+      motionMultiplier = atoi(buffer);
+    }    
+  }
+}
+
+void reset() {
+  cmdMessenger.sendCmd(ACK, "Reset Command Received");
+  hardReset();
 }
 
 void setupMotorControl() {
@@ -152,64 +250,25 @@ void setRampSpeed(byte param) {
   setSpeedRampRate();
 };
 
-void setDistance(unsigned int param) {
-  distance = param;
-};
-
-void setRotationDistance(unsigned int param) {
-  rotationDistance = param;
-};
-
-void setCollisionDistance(long param) {
-  frontCollisionDistance = param;
-};
-
 void setSpeedRampRate() {
   // Set speed ramp rate (acceleration/deceleration)
   setSpeedRampRate(BothMotors, rampSpeed);
 }
 
-void setDebug(int param) {
-  debugLevel = param;
-}
-
 // Send parameters to client
-void sendParam(char param) {
-  switch(param) {
-  case RAMP_SPEED:
-    sendParam(RAMP_SPEED, rampSpeed);
-    break;
-  case DISTANCE:
-    sendParam(DISTANCE, distance);
-    break;
-  case ROTATION_DISTANCE:
-    sendParam(ROTATION_DISTANCE, rotationDistance);
-    break;
-  case COLLISION_DISTANCE:
-    sendParam(COLLISION_DISTANCE, frontCollisionDistance);
-    break;
-  }
+void sendParam(int commandId, int value) {
+  String valueStr = String(value);
+  char buffer[255] = { 
+    '\0'                                     };
+  sprintf(buffer, "%i", value);
+  cmdMessenger.sendCmd(commandId, buffer);
 }
 
 void resetParametersToDefaults() {
   rampSpeed = DefaultRampSpeed;
-  distance = DefaultDistance;
+  motionMultiplier = DefaultMotionMultiplier;
   rotationDistance = DefaultRotationDistance;
-  frontCollisionDistance = DefaultFrontCollisionDistance;
-}
-
-void sendAllParams() {
-  sendParam(RAMP_SPEED, rampSpeed);
-  sendParam(DISTANCE, distance);
-  sendParam(ROTATION_DISTANCE, rotationDistance);
-  sendParam(COLLISION_DISTANCE, frontCollisionDistance);
-}
-
-void sendParam(char param, int value) {
-  Serial.print(START_CHAR);
-  Serial.print(param);
-  Serial.print(String(value));
-  Serial.print(STOP_CHAR);
+  frontSensorDistance = DefaultFrontSensorDistance;
 }
 
 void checkForForwardCollision() {
@@ -219,8 +278,7 @@ void checkForForwardCollision() {
   // Assumption: Since QPOS has a signed return value this will work.
   if (hasForwardMotion()) {
     long distanceFromObject = ping(FRONT_PING_SENSOR_PIN);
-    if (distanceFromObject < frontCollisionDistance) {
-      log("Collision imminent: " + String(distanceFromObject) + "cm from object", DEBUG_ON);
+    if (distanceFromObject < frontSensorDistance) {
       sendCollisionWarning(distanceFromObject);
       emergencyStop();
     }
@@ -231,55 +289,9 @@ boolean hasForwardMotion() {
   return getSpeed(LeftMotor) > 0 &&  getSpeed(RightMotor) > 0;
 }
 
-void performCommand(String command) {
-  char baseCommand = command.charAt(0);
-  String param = command.substring(1);
-  log("Arduino command ack: " + command + " Base Command: " + baseCommand + " Param: " + param, DEBUG_ON);
-  switch (baseCommand) {
-  case RAMP_SPEED:
-    setRampSpeed(param.toInt());
-    break;
-  case DISTANCE:
-    setDistance(param.toInt());
-    break;
-  case ROTATION_DISTANCE:
-    setRotationDistance(param.toInt());
-    break;
-  case COLLISION_DISTANCE:
-    setCollisionDistance(param.toInt());
-    break;
-  case SET_DEBUG:
-    setDebug(param.toInt());
-    break;
-  case RESET:
-    hardReset();
-    break;
-  case SEND_ALL_PARAMS:
-    sendAllParams();
-    break;
-  case JOYSTICK:
-    handleJoystickInput(param);
-    break;
-  default:
-    log("Unknown Command Received: " + command + " Base Command: " + String(baseCommand) + " Param: " + String(param), DEBUG_ON);
-  }
-}
-
-void handleJoystickInput(String param) {
-
-  int position = param.indexOf(POSITION);
-  String x_string = param.substring(0, position);
-  String y_string =  param.substring(position + 1, param.length()  );
-
-  int x = x_string.toInt();
-  int y = y_string.toInt();
-  move(x, y);
-  log("Received Joystick position x: " + String(x) + " y: " + String(y), DEBUG_ON);
-}
-
 // Motor commands
 void move(int x, int y) {
-  log("Moving: " + String(x) + " y: " + String(y), DEBUG_ON);
+  //logMsg("Moving: " + String(x) + " y: " + String(y), DEBUG_ON);
   int requestedSpeed = 0;
   int requestedDirection = 0;
   int requestedTurn = 0;
@@ -309,13 +321,13 @@ void move(int x, int y) {
   // Moving
   if (requestedSpeed > 0 && requestedTurn == 0) {
     setSpeedMaximum(BothMotors, requestedSpeed);
-    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * DefaultDistance);
+    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * motionMultiplier);
   };
 
   // Turning
   if (requestedSpeed == 0 && requestedTurn < 0) {
     setSpeedMaximum(BothMotors, requestedTurn);
-    rotatePositions(requestedTurnDirection * requestedTurn * DefaultRotationDistance);
+    rotatePositions(requestedTurnDirection * requestedTurn * rotationDistance);
   };
 
 
@@ -323,7 +335,7 @@ void move(int x, int y) {
   if (requestedSpeed > 0 && requestedTurn > 0) {
     setSpeedMaximum(LeftMotor,requestedSpeed + (requestedTurn * requestedTurnDirection));
     setSpeedMaximum(RightMotor, requestedTurn + (requestedTurn * requestedTurnDirection * -1));
-    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * DefaultDistance);
+    travelNumberOfPositions(BothMotors, requestedDirection * requestedSpeed * motionMultiplier);
   };
 
   //TODO(paul): Handle other conditions?
@@ -335,7 +347,7 @@ void move(int x, int y) {
 // Left if position > 0
 // approx 4.5 degrees per position
 void rotatePositions(int positions) {
-  log("Rotating " + String(positions) + " positions", DEBUG_ON);
+  // logMsg("Rotating " + String(positions) + " positions", DEBUG_ON);
   travelNumberOfPositions(LeftMotor, positions);
   travelNumberOfPositions(RightMotor, -1 * positions);
 }
@@ -345,45 +357,45 @@ void rotatePositions(int positions) {
 // Backward if position > 0
 // Approx 1.33 cm per position
 void travelNumberOfPositions(byte motorId, int positions) {
-  log("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId, DEBUG_ON);
+  //  logMsg("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId, DEBUG_ON);
   issueMotorCommand(TRVL, motorId, positions);
 }
 
 // Immediate stop without deceleration
 void emergencyStop() {
-  log("Initating emergency stop",  DEBUG_CHATTY);
+  //logMsg("Initating emergency stop",  DEBUG_CHATTY);
   clearPosition(BothMotors);
 }
 
 // Smooth stop with deceleration. Not cumulative.
 void smoothStop() {
-  log("Initiating smooth stop",  DEBUG_ON);
+  //logMsg("Initiating smooth stop",  DEBUG_ON);
   travelNumberOfPositions(BothMotors, 0);
 }
 
 void clearPosition(byte motorId) {
-  log("Clearing positions for motorId(s): " + String((int)motorId),  DEBUG_CHATTY);
+  //logMsg("Clearing positions for motorId(s): " + String((int)motorId),  DEBUG_CHATTY);
   issueMotorCommand(CLRP, motorId);
 }
 
 
 void setOrientationAsReversed(byte motorId) {
-  log("Reversing orientation for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
+  //  logMsg("Reversing orientation for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
   issueMotorCommand(SREV, motorId);
 }
 
 void setSpeedRampRate(byte motorId, byte rampSpeed) {
-  log("Setting speed ramp rate for motorId(s): " + String((int)motorId) + " to: " + String((int)rampSpeed),  DEBUG_CHATTY);
+  //  logMsg("Setting speed ramp rate for motorId(s): " + String((int)motorId) + " to: " + String((int)rampSpeed),  DEBUG_CHATTY);
   issueMotorCommand(SSRR, motorId, rampSpeed);
 }
 
 void setSpeedMaximum(byte motorId, int maximumSpeed) {
-  log("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed),  DEBUG_ON);
+  //  logMsg("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed),  DEBUG_ON);
   issueMotorCommand(SMAX, motorId, maximumSpeed);
 }
 
 void setTransmissionDelay(byte motorId, byte delay) {
-  log("Setting transmission delay for motorId(s): " + String((int)motorId) + " to: " + String((int)delay), DEBUG_CHATTY);
+  //  logMsg("Setting transmission delay for motorId(s): " + String((int)motorId) + " to: " + String((int)delay), DEBUG_CHATTY);
   issueMotorCommand(STXD, motorId, delay);
 }
 
@@ -396,27 +408,38 @@ void softReset() {
 void hardReset() {
   softReset();
   resetParametersToDefaults();
-  sendAllParams();
+  doSendAllParams();
+}
+
+void doSendAllParams() {
+  sendParam(RAMP_SPEED, rampSpeed);
+  sendParam(MOTION_MULTIPLIER, motionMultiplier);
+  sendParam(ROTATION_DISTANCE, rotationDistance);
+  sendParam(COLLISION_DISTANCE, frontSensorDistance);
 }
 
 void issueMotorCommand(byte command, byte motorId) {
   byte fullCommand = command + motorId;
-  log("Issuing single byte command: 0x"  + String(fullCommand, HEX), DEBUG_CHATTY);
+  //  String commandStr = String(fullCommand, HEX);
+  //  logMsg("Issuing single byte command: 0x"  + commandStr, DEBUG_CHATTY);
   sendToMotorSerial(fullCommand);
 }
 
 void issueMotorCommand(byte command, byte motorId, byte param) {
   byte fullCommand = command + motorId;
-  log("Issuing two byte command: 0x"  + String(fullCommand, HEX) + ", param: " + String((int)param), DEBUG_CHATTY);
+  //  String commandStr = String(fullCommand, HEX);
+  //  String paramStr = String(param, HEX);
+  //  logMsg("Issuing two byte command: 0x"  + commandStr + " param: " + paramStr, DEBUG_CHATTY);
   sendToMotorSerial(fullCommand);
   sendToMotorSerial(param);
 }
 
 void issueMotorCommand(byte command, byte motorId, int param) {
   byte fullCommand = command + motorId;
+  //  String commandStr = String(fullCommand, HEX);
   byte high = highByte(param);
   byte low =  lowByte(param);
-  log("Issuing three byte command: 0x"  + String(fullCommand, HEX) + ", param:" + String(param), DEBUG_CHATTY);
+  //  logMsg("Issuing three byte command: 0x"  + commandStr + " param:" + String(param), DEBUG_CHATTY);
   sendToMotorSerial(fullCommand);
   sendToMotorSerial(high);
   sendToMotorSerial(low);
@@ -448,25 +471,25 @@ void setPinToRx(int pin) {
 // Motor Queries
 
 int getPosition(byte motorId) {
-  log("Getting position for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
+  //  logMsg("Getting position for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
   int position = queryMotor(QPOS, motorId);
-  log("Response for position for motorId(s): " + String((int)motorId) + " is: " + String(position), DEBUG_CHATTY);
+  //  logMsg("Response for position for motorId(s): " + String((int)motorId) + " is: " + String(position), DEBUG_CHATTY);
 
   return position;
 }
 
 int getSpeed(byte motorId) {
-  log("Getting speed for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
+  //  logMsg("Getting speed for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
   int speed = queryMotor(QSPD, motorId);
-  log("Response for speed for motorId(s): " + String((int)motorId) + " is: " + String(speed), DEBUG_CHATTY);
+  //  logMsg("Response for speed for motorId(s): " + String((int)motorId) + " is: " + String(speed), DEBUG_CHATTY);
 
   return speed;
 }
 
 boolean hasArrived(byte motorId, byte tolerance) {
-  log("Checking arrival for motorId(s): " + String((int)motorId) + " with tolerance: " + String((int)motorId), DEBUG_CHATTY);
+  //  logMsg("Checking arrival for motorId(s): " + String((int)motorId) + " with tolerance: " + String((int)motorId), DEBUG_CHATTY);
   boolean hasArrived = queryMotor(CHFA, motorId, tolerance);
-  log("Response for has arrived for motorId(s): " + String((int)motorId) + " is: " + String(hasArrived), DEBUG_CHATTY);
+  //  logMsg("Response for has arrived for motorId(s): " + String((int)motorId) + " is: " + String(hasArrived), DEBUG_CHATTY);
 
   return hasArrived;
 }
@@ -477,9 +500,11 @@ int queryMotor(byte command, byte motorId) {
   setMotorPinToRx();
   // Do we need to pause?
   byte high = MotorSerial.read();
+  //  String highStr = String(high, HEX);
   byte low = MotorSerial.read();
+  //  String lowStr = String(low, HEX);
 
-  log("Received Response high byte: " + String(high, HEX) + " Low byte: " + String(low, HEX), DEBUG_CHATTY);
+  //  logMsg("Received Response high byte: " + highStr + " Low byte: " + lowStr, DEBUG_CHATTY);
   return (int)word(high, low);
 }
 
@@ -490,7 +515,7 @@ boolean queryMotor(byte command, byte motorId, byte tolerance) {
   // Do we need to pause?
   byte response = MotorSerial.read();
 
-  log("Received Response: " + String(response, HEX), DEBUG_CHATTY);
+  //  logMsg("Received Response: " + String(response, HEX), DEBUG_CHATTY);
   return response == Arrived;
 }
 
@@ -528,25 +553,22 @@ long microsecondsToCentimeters(long microseconds) {
   return microseconds / 29 / 2;
 }
 
-// Logging
-void log(String message, int logLevel) {
-  if(debugLevel >= logLevel) {
-    Serial.print(START_CHAR);
-    Serial.print(DEBUG_MESSAGE);
-    Serial.print(message);
-    Serial.print(STOP_CHAR);
-  }
+void sendCollisionWarning(long distanceFromObject) {
+  String message = String(distanceFromObject);
+  char buffer[255] = { 
+    '\0'                                     };
+  message.toCharArray(buffer, message.length());
+  cmdMessenger.sendCmd(FRONT_COLLISION, buffer);
 }
 
-void sendCollisionWarning(int distanceFromObject) {
-  sendWarning(COLLISION_WARNING, String(distanceFromObject));
-}
 
-void sendWarning(String returnCode, String params) {
-  Serial.print(START_CHAR);
-  Serial.print(returnCode);
-  Serial.print(params);
-  Serial.print(STOP_CHAR);
+void logMsg(String message, int level) {
+  //  if (debugLevel >= level) {
+  //    char buffer[255] = {
+  //      '\0'                                     };
+  //    message.toCharArray(buffer, message.length());
+  //    cmdMessenger.sendCmd(DEBUG_MESSAGE, buffer);
+  //  }
 }
 
 
