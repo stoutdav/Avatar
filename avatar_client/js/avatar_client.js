@@ -2,17 +2,27 @@
 var FIELD_SEPARATOR = ",";
 var COMMAND_SEPARATOR = ";";
 
+// Messages from Avatar
+var COMM_ERROR = 0;
+var ACK = 1;
+var ERR = 3;
+var DEBUG_MESSAGE = 4;
+var FRONT_COLLISION = 5;
+var RAMP_SPEED = 6;
+var MOTION_MULTIPLIER = 7;
+var ROTATION_DISTANCE = 8;
+var COLLISION_DISTANCE = 9;
+var RESET_ACK = 10;
 
-var COLLISION_WARNING = "W";
-var DEBUG_MESSAGE = "#";
-
+// Commands sent to Avatar
+var IS_AVATAR_READY = 2;
 var SEND_ALL_PARAMS = 11;  // Used when requesting all parameter values
 var JOYSTICK = 12;
 var SET_DEBUG = 13;
-var RAMP_SPEED = 14;
-var COLLISION_DISTANCE = 15;
-var ROTATION_DISTANCE = 16;
-var MOTION_MULTIPLIER = 17;
+var SET_RAMP_SPEED = 14;
+var SET_COLLISION_DISTANCE = 15;
+var SET_ROTATION_DISTANCE = 16;
+var SET_MOTION_MULTIPLIER = 17;
 var RESET = 18;
 
 var DEBUG_OFF = '0';
@@ -52,28 +62,39 @@ function getNextMessageFromBuffer() {
     var message = [];
     var length = messageBuffer.length;
     for (var i = 0; i < length; i++) {
-        message.push(messageBuffer.shift());
+        var nextChar = messageBuffer.shift();
+        if (nextChar != COMMAND_SEPARATOR) {
+            message.push(nextChar);
+        } else {
+            break;
+        }
     }
     return message;
 }
+
 function handleMessageFromServer(message) {
     var logMessage;
-    var messageId = message.shift();
-    var params = new Array();
-    for (var i = 0; i < message.length; i++) {
-        params.push(message.shift());
-    }
+    var messageStr = message.join("");
+    var params = messageStr.split(FIELD_SEPARATOR);
+    var messageId = parseInt(params.shift());
 
     switch (messageId) {
-        case COLLISION_WARNING:
-            logMessage = "Collision warning. Front sensor is " + params[0] + " cm from object.";
-            $("#messages").prepend("<br>");
-            $("#messages").prepend(logMessage);
+        case COMM_ERROR:
+            displayMessage("COMM ERROR: " + params[0]);
+            break;
+        case ACK:
+            displayMessage("ACK: " + params[0]);
+            break;
+        case ERR:
+            displayMessage("ERROR: " + params[0]);
             break;
         case DEBUG_MESSAGE:
             $("#debugOutput").prepend("<br>");
             $("#debugOutput").prepend(params[0]);
             logMessage = params[0];
+            break;
+        case FRONT_COLLISION:
+            displayMessage("Collision warning. Front sensor is " + params[0] + " cm from object.");
             break;
         case RAMP_SPEED:
             $("#rampSpeedSlider").slider("value", params[0]);
@@ -95,18 +116,24 @@ function handleMessageFromServer(message) {
             $("#frontSensor").val(params[0]);
             logMessage = "Set front sensor distance to " + params[0];
             break;
-        default:
-            logMessage = "Unknown Message"
+        case RESET_ACK:
+            break;
 
+        default:
+            logMessage = "Unknown Message: " + messageId;
     }
     console.log("Client: Received message from server", logMessage);
 }
 
+function displayMessage(logMessage) {
+    $("#messages").prepend("<br>");
+    $("#messages").prepend(logMessage);
+}
 function sendJoystickPosition(x, y) {
     // 80 comes from avatar.css
     var xScaled = Math.round((x / 80) * 10);
     var yScaled = Math.round((y / 80) * 10);
-    sendMessageToServer(JOYSTICK, new Array(xScaled,yScaled));
+    sendMessageToServer(JOYSTICK, new Array(xScaled, yScaled));
 }
 
 function sendMessageToServer(command, fields) {
@@ -190,7 +217,7 @@ $(function() {
                     $("#rampSpeed").val(ui.value);
                 },
                 stop: function(event, ui) {
-                    sendMessageToServer(RAMP_SPEED, [ui.value]);
+                    sendMessageToServer(SET_RAMP_SPEED, [ui.value]);
                 }
             });
     $("#rampSpeed").val($("#rampSpeedSlider").slider("value"));
@@ -204,7 +231,7 @@ $(function() {
                     $("#motionMultiplier").val(ui.value);
                 },
                 stop: function(event, ui) {
-                    sendMessageToServer(MOTION_MULTIPLIER, [ui.value]);
+                    sendMessageToServer(SET_MOTION_MULTIPLIER, [ui.value]);
                 }
             });
     $("#motionMultiplier").val($("#motionMultiplierSlider").slider("value"));
@@ -218,7 +245,7 @@ $(function() {
                     $("#rotationDistance").val(ui.value);
                 },
                 stop: function(event, ui) {
-                    sendMessageToServer(ROTATION_DISTANCE, [ui.value]);
+                    sendMessageToServer(SET_ROTATION_DISTANCE, [ui.value]);
                 }
             });
     $("#rotationDistance").val($("#rotationDistanceSlider").slider("value"));
@@ -232,7 +259,7 @@ $(function() {
                     $("#frontSensor").val(ui.value);
                 },
                 stop: function(event, ui) {
-                    sendMessageToServer(COLLISION_DISTANCE, [ui.value]);
+                    sendMessageToServer(SET_COLLISION_DISTANCE, [ui.value]);
                 }
             });
     $("#frontSensor").val($("#frontSensorSlider").slider("value"));

@@ -52,7 +52,7 @@ enum
   MOTION_MULTIPLIER      = 7,
   ROTATION_DISTANCE = 8,
   COLLISION_DISTANCE = 9,
-  RESET        = 10,
+  RESET_ACK        = 10,
   SEND_CMDS_END,
 };
 
