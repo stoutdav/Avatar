@@ -291,7 +291,7 @@ boolean hasForwardMotion() {
 
 // Motor commands
 void move(int x, int y) {
-  //logMsg("Moving: " + String(x) + " y: " + String(y), DEBUG_ON);
+  //sendDebugMsg("Moving: " + String(x) + " y: " + String(y), DEBUG_ON);
   int requestedSpeed = 0;
   int requestedDirection = 0;
   int requestedTurn = 0;
@@ -347,7 +347,7 @@ void move(int x, int y) {
 // Left if position > 0
 // approx 4.5 degrees per position
 void rotatePositions(int positions) {
-  // logMsg("Rotating " + String(positions) + " positions", DEBUG_ON);
+  // sendDebugMsg("Rotating " + String(positions) + " positions", DEBUG_ON);
   travelNumberOfPositions(LeftMotor, positions);
   travelNumberOfPositions(RightMotor, -1 * positions);
 }
@@ -357,45 +357,45 @@ void rotatePositions(int positions) {
 // Backward if position > 0
 // Approx 1.33 cm per position
 void travelNumberOfPositions(byte motorId, int positions) {
-  //  logMsg("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId, DEBUG_ON);
+  //  sendDebugMsg("Travelling " + String(positions) + " positions for motorId(s): " + (int)motorId, DEBUG_ON);
   issueMotorCommand(TRVL, motorId, positions);
 }
 
 // Immediate stop without deceleration
 void emergencyStop() {
-  //logMsg("Initating emergency stop",  DEBUG_CHATTY);
+  //sendDebugMsg("Initating emergency stop",  DEBUG_CHATTY);
   clearPosition(BothMotors);
 }
 
 // Smooth stop with deceleration. Not cumulative.
 void smoothStop() {
-  //logMsg("Initiating smooth stop",  DEBUG_ON);
+  //sendDebugMsg("Initiating smooth stop",  DEBUG_ON);
   travelNumberOfPositions(BothMotors, 0);
 }
 
 void clearPosition(byte motorId) {
-  //logMsg("Clearing positions for motorId(s): " + String((int)motorId),  DEBUG_CHATTY);
+  //sendDebugMsg("Clearing positions for motorId(s): " + String((int)motorId),  DEBUG_CHATTY);
   issueMotorCommand(CLRP, motorId);
 }
 
 
 void setOrientationAsReversed(byte motorId) {
-  //  logMsg("Reversing orientation for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
+  //  sendDebugMsg("Reversing orientation for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
   issueMotorCommand(SREV, motorId);
 }
 
 void setSpeedRampRate(byte motorId, byte rampSpeed) {
-  //  logMsg("Setting speed ramp rate for motorId(s): " + String((int)motorId) + " to: " + String((int)rampSpeed),  DEBUG_CHATTY);
+  //  sendDebugMsg("Setting speed ramp rate for motorId(s): " + String((int)motorId) + " to: " + String((int)rampSpeed),  DEBUG_CHATTY);
   issueMotorCommand(SSRR, motorId, rampSpeed);
 }
 
 void setSpeedMaximum(byte motorId, int maximumSpeed) {
-  //  logMsg("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed),  DEBUG_ON);
+  //  sendDebugMsg("Setting maximum speed for motorId(s): " + String((int)motorId) + " to: " + String(maximumSpeed),  DEBUG_ON);
   issueMotorCommand(SMAX, motorId, maximumSpeed);
 }
 
 void setTransmissionDelay(byte motorId, byte delay) {
-  //  logMsg("Setting transmission delay for motorId(s): " + String((int)motorId) + " to: " + String((int)delay), DEBUG_CHATTY);
+  //  sendDebugMsg("Setting transmission delay for motorId(s): " + String((int)motorId) + " to: " + String((int)delay), DEBUG_CHATTY);
   issueMotorCommand(STXD, motorId, delay);
 }
 
@@ -421,7 +421,7 @@ void doSendAllParams() {
 void issueMotorCommand(byte command, byte motorId) {
   byte fullCommand = command + motorId;
   //  String commandStr = String(fullCommand, HEX);
-  //  logMsg("Issuing single byte command: 0x"  + commandStr, DEBUG_CHATTY);
+  //  sendDebugMsg("Issuing single byte command: 0x"  + commandStr, DEBUG_CHATTY);
   sendToMotorSerial(fullCommand);
 }
 
@@ -429,7 +429,7 @@ void issueMotorCommand(byte command, byte motorId, byte param) {
   byte fullCommand = command + motorId;
   //  String commandStr = String(fullCommand, HEX);
   //  String paramStr = String(param, HEX);
-  //  logMsg("Issuing two byte command: 0x"  + commandStr + " param: " + paramStr, DEBUG_CHATTY);
+  //  sendDebugMsg("Issuing two byte command: 0x"  + commandStr + " param: " + paramStr, DEBUG_CHATTY);
   sendToMotorSerial(fullCommand);
   sendToMotorSerial(param);
 }
@@ -439,7 +439,7 @@ void issueMotorCommand(byte command, byte motorId, int param) {
   //  String commandStr = String(fullCommand, HEX);
   byte high = highByte(param);
   byte low =  lowByte(param);
-  //  logMsg("Issuing three byte command: 0x"  + commandStr + " param:" + String(param), DEBUG_CHATTY);
+  //  sendDebugMsg("Issuing three byte command: 0x"  + commandStr + " param:" + String(param), DEBUG_CHATTY);
   sendToMotorSerial(fullCommand);
   sendToMotorSerial(high);
   sendToMotorSerial(low);
@@ -471,25 +471,25 @@ void setPinToRx(int pin) {
 // Motor Queries
 
 int getPosition(byte motorId) {
-  //  logMsg("Getting position for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
+  //  sendDebugMsg("Getting position for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
   int position = queryMotor(QPOS, motorId);
-  //  logMsg("Response for position for motorId(s): " + String((int)motorId) + " is: " + String(position), DEBUG_CHATTY);
+  //  sendDebugMsg("Response for position for motorId(s): " + String((int)motorId) + " is: " + String(position), DEBUG_CHATTY);
 
   return position;
 }
 
 int getSpeed(byte motorId) {
-  //  logMsg("Getting speed for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
+  //  sendDebugMsg("Getting speed for motorId(s): " + String((int)motorId), DEBUG_CHATTY);
   int speed = queryMotor(QSPD, motorId);
-  //  logMsg("Response for speed for motorId(s): " + String((int)motorId) + " is: " + String(speed), DEBUG_CHATTY);
+  //  sendDebugMsg("Response for speed for motorId(s): " + String((int)motorId) + " is: " + String(speed), DEBUG_CHATTY);
 
   return speed;
 }
 
 boolean hasArrived(byte motorId, byte tolerance) {
-  //  logMsg("Checking arrival for motorId(s): " + String((int)motorId) + " with tolerance: " + String((int)motorId), DEBUG_CHATTY);
+  //  sendDebugMsg("Checking arrival for motorId(s): " + String((int)motorId) + " with tolerance: " + String((int)motorId), DEBUG_CHATTY);
   boolean hasArrived = queryMotor(CHFA, motorId, tolerance);
-  //  logMsg("Response for has arrived for motorId(s): " + String((int)motorId) + " is: " + String(hasArrived), DEBUG_CHATTY);
+  //  sendDebugMsg("Response for has arrived for motorId(s): " + String((int)motorId) + " is: " + String(hasArrived), DEBUG_CHATTY);
 
   return hasArrived;
 }
@@ -504,7 +504,7 @@ int queryMotor(byte command, byte motorId) {
   byte low = MotorSerial.read();
   //  String lowStr = String(low, HEX);
 
-  //  logMsg("Received Response high byte: " + highStr + " Low byte: " + lowStr, DEBUG_CHATTY);
+  //  sendDebugMsg("Received Response high byte: " + highStr + " Low byte: " + lowStr, DEBUG_CHATTY);
   return (int)word(high, low);
 }
 
@@ -515,7 +515,7 @@ boolean queryMotor(byte command, byte motorId, byte tolerance) {
   // Do we need to pause?
   byte response = MotorSerial.read();
 
-  //  logMsg("Received Response: " + String(response, HEX), DEBUG_CHATTY);
+  //  sendDebugMsg("Received Response: " + String(response, HEX), DEBUG_CHATTY);
   return response == Arrived;
 }
 
@@ -562,7 +562,7 @@ void sendCollisionWarning(long distanceFromObject) {
 }
 
 
-void logMsg(String message, int level) {
+void sendDebugMsg(String message, int level) {
   //  if (debugLevel >= level) {
   //    char buffer[255] = {
   //      '\0'                                     };
