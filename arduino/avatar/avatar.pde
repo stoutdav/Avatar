@@ -391,7 +391,7 @@ void setSpeedMaximum(byte motorId, int maximumSpeed) {
 }
 
 void setTransmissionDelay(byte motorId, byte transmissionDelay) {
-  sendDebugMsg("Setting motor transmission delay", DEBUG_CHATTY);
+//  sendDebugMsg("Setting motor transmission delay", DEBUG_CHATTY);
   issueMotorCommand(STXD, motorId, transmissionDelay);
 }
 
@@ -416,13 +416,13 @@ void doSendAllParams() {
 
 void issueMotorCommand(byte command, byte motorId) {
   byte fullCommand = command + motorId;
-  sendDebugMsg("Issuing single byte command", DEBUG_CHATTY);
+//  sendDebugMsg("Issuing single byte command", DEBUG_CHATTY);
   sendToMotorSerial(fullCommand);
 }
 
 void issueMotorCommand(byte command, byte motorId, byte param) {
   byte fullCommand = command + motorId;
-  sendDebugMsg("Issuing two byte command", DEBUG_CHATTY);
+//  sendDebugMsg("Issuing two byte command", DEBUG_CHATTY);
   sendToMotorSerial(fullCommand);
   sendToMotorSerial(param);
 }
@@ -431,7 +431,7 @@ void issueMotorCommand(byte command, byte motorId, int param) {
   byte fullCommand = command + motorId;
   byte high = highByte(param);
   byte low =  lowByte(param);
-  sendDebugMsg("Issuing three byte command", DEBUG_CHATTY);
+//  sendDebugMsg("Issuing three byte command", DEBUG_CHATTY);
   sendToMotorSerial(fullCommand);
   sendToMotorSerial(high);
   sendToMotorSerial(low);
@@ -463,23 +463,23 @@ void setPinToRx(int pin) {
 // Motor Queries
 
 int getPosition(byte motorId) {
-  sendDebugMsg("Getting motor position", DEBUG_CHATTY);
+//  sendDebugMsg("Getting motor position", DEBUG_CHATTY);
   int position = queryMotor(QPOS, motorId);
-  sendDebugMsg("Received motor position response", DEBUG_CHATTY);
+//  sendDebugMsg("Received motor position response", DEBUG_CHATTY);
   return position;
 }
 
 int getSpeed(byte motorId) {
-  sendDebugMsg("Getting motor speed", DEBUG_CHATTY);
+//  sendDebugMsg("Getting motor speed", DEBUG_CHATTY);
   int speed = queryMotor(QSPD, motorId);
-  sendDebugMsg("Received motor speed response", DEBUG_CHATTY);
+//  sendDebugMsg("Received motor speed response", DEBUG_CHATTY);
   return speed;
 }
 
 boolean hasArrived(byte motorId, byte tolerance) {
-  sendDebugMsg("Checking motor arrival", DEBUG_CHATTY);
+//  sendDebugMsg("Checking motor arrival", DEBUG_CHATTY);
   boolean hasArrived = queryMotor(CHFA, motorId, tolerance);
-  sendDebugMsg("Received motor arrival response", DEBUG_CHATTY);
+//  sendDebugMsg("Received motor arrival response", DEBUG_CHATTY);
   return hasArrived;
 }
 
@@ -541,7 +541,7 @@ void sendCollisionWarning(long distanceFromObject) {
   String message = String(distanceFromObject);
   char buffer[255] = {
     '\0'    };
-  message.toCharArray(buffer, message.length());
+  message.toCharArray(buffer, message.length() + 1);
   cmdMessenger.sendCmd(FRONT_COLLISION, buffer);
 }
 
@@ -550,7 +550,7 @@ void sendDebugMsg(String message, int level) {
   if (debugLevel >= level) {
     char buffer[255] = {
       '\0'        };
-    message.toCharArray(buffer, message.length());
+    message.toCharArray(buffer, message.length() + 1);
     cmdMessenger.sendCmd(DEBUG_MESSAGE, buffer);
   }
 }
